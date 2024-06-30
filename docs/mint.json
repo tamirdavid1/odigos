@@ -101,6 +101,7 @@
             "pipeline/actions/deleteattribute",
             "pipeline/actions/rename-attribute",
             "pipeline/actions/probabilisticsampler",
+            "pipeline/actions/errorsampler",
             "pipeline/actions/crd",
             "pipeline/actions/troubleshooting"
           ]

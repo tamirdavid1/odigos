@@ -21,6 +21,8 @@ type AddClusterInfoExpansion interface{}
 
 type DeleteAttributeExpansion interface{}
 
+type ErrorSamplerExpansion interface{}
+
 type ProbabilisticSamplerExpansion interface{}
 
 type RenameAttributeExpansion interface{}
