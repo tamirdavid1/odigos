@@ -22,6 +22,9 @@ This processor samples traces based on the following supported rules:
 - service: The name of the service for which the rule applies. Only traces from this service will be considered.
 
 
+
+2. Error Rule: This rule allows you to configure a list of status codes [ERROR/OK/UNSET]. traces with a status code that not configured will be delete.
+
 **Notes:**
 - When using the `odigossampling` processor, it is mandatory to use the `groupbytrace` processor beforehand.
 ```

@@ -51,6 +51,14 @@ func (r *Rule) Validate() error {
 			return err
 		}
 		r.RuleDetails = &details
+	case "error":
+		var details sampling.ErrorRule
+		if err := mapstructure.Decode(r.RuleDetails, &details); err != nil {
+			return err
+		}
+		if err := details.Validate(); err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unknown rule type: %s", r.Type)
 	}
