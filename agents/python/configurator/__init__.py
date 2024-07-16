@@ -5,7 +5,13 @@ import atexit
 import os
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.resources import ProcessResourceDetector, OTELResourceDetector
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import set_tracer_provider
+from opentelemetry.sdk.trace.sampling import ParentBased
+
 from .version import VERSION
+from .odigos_sampler import OdigosSampler
 from opamp.http_client import OpAMPHTTPClient
 
 class OdigosPythonConfigurator(sdk_config._BaseConfigurator):
@@ -37,17 +43,38 @@ def _initialize_components():
             .merge(OTELResourceDetector().detect()) \
             .merge(ProcessResourceDetector().detect())
 
-        initialize_traces_if_enabled(trace_exporters, resource)
+        sampler = initialize_traces_if_enabled(trace_exporters, resource)
+        client.set_sampler(sampler)
+        
         initialize_metrics_if_enabled(metric_exporters, resource)
         initialize_logging_if_enabled(log_exporters, resource)
 
 
-def initialize_traces_if_enabled(trace_exporters, resource):
+def initialize_traces_if_enabled(trace_exporters, resource) -> ParentBased:
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
     if traces_enabled != "none":
         id_generator_name = sdk_config._get_id_generator()
         id_generator = sdk_config._import_id_generator(id_generator_name)
-        sdk_config._init_tracing(exporters=trace_exporters, id_generator=id_generator, resource=resource)
+        
+        odigos_sampler = OdigosSampler()
+        sampler = ParentBased(odigos_sampler)
+        
+        
+        provider = TracerProvider(
+            id_generator=id_generator,
+            sampler=sampler,
+            resource=resource,
+        )
+        set_tracer_provider(provider)
+
+        for _, exporter_class in trace_exporters.items():
+            exporter_args = {}
+            provider.add_span_processor(
+                BatchSpanProcessor(exporter_class(**exporter_args))
+            )
+            
+    return sampler
+            
 
 def initialize_metrics_if_enabled(metric_exporters, resource):
     metrics_enabled = os.getenv(sdk_config.OTEL_METRICS_EXPORTER, "none").strip().lower()

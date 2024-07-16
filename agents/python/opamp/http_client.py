@@ -19,7 +19,7 @@ from opamp import opamp_pb2, anyvalue_pb2, utils
 # Setup the logger
 opamp_logger = logging.getLogger(__name__)
 opamp_logger.setLevel(logging.DEBUG)
-opamp_logger.disabled = True # Comment this line to enable the logger
+# opamp_logger.disabled = True # Comment this line to enable the logger
 
 
 class OpAMPHTTPClient:
@@ -33,6 +33,9 @@ class OpAMPHTTPClient:
         self.event = event
         self.next_sequence_num = 0
         self.instance_uid = uuid7().__str__()
+
+    def set_sampler(self, sampler):
+        self.sampler = sampler
 
     def start(self):
         self.client_thread = threading.Thread(target=self.run, name="OpAMPClientThread", daemon=True)
