@@ -19,7 +19,7 @@ from opamp import opamp_pb2, anyvalue_pb2, utils
 # Setup the logger
 opamp_logger = logging.getLogger(__name__)
 opamp_logger.setLevel(logging.DEBUG)
-# opamp_logger.disabled = True # Comment this line to enable the logger
+opamp_logger.disabled = True # Comment this line to enable the logger
 
 
 class OpAMPHTTPClient:
@@ -34,6 +34,7 @@ class OpAMPHTTPClient:
         self.next_sequence_num = 0
         self.instance_uid = uuid7().__str__()
         self.remote_config_status = None
+        self.sampler = None
 
     def set_sampler(self, sampler):
         self.sampler = sampler
@@ -85,6 +86,8 @@ class OpAMPHTTPClient:
                 except requests.RequestException as e:
                     opamp_logger.error(f"Error fetching data: {e}")
                 self.condition.wait(30)
+                # self.sampler._root.update_config(new_config=mock_obj.get('headsampling_config', {})) 
+                
 
     def send_heartbeat(self) -> opamp_pb2.ServerToAgent:
         opamp_logger.debug("Sending heartbeat to OpAMP server...") 
@@ -186,4 +189,4 @@ class OpAMPHTTPClient:
             self.remote_config_status = remote_config_status
             return True
         
-        return False        
+        return False
