@@ -87,8 +87,8 @@ func getFiles(dir string, hasOSFiles bool) ([]string, error) {
 		}
 		if !d.IsDir() {
 			if hasOSFiles {
-				log.Logger.Info("Copying only non .so files")
 				if filepath.Ext(path) == ".so" {
+					log.Logger.Info("Skipping .so file: %s\n", path)
 					return nil
 				}
 			}
