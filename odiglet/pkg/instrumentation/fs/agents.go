@@ -25,6 +25,7 @@ func CopyAgentsDirectoryToHost() error {
 	// We kept the .so files to avoid removing the agents that are already loaded in the process memory
 	err := removeDir(hostDir)
 	if err != nil {
+		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
 	}
 
