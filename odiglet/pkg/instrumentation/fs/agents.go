@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
@@ -23,16 +22,10 @@ func CopyAgentsDirectoryToHost() error {
 	// as we want a fresh copy of instrumentation agents with no files leftover from previous odigos versions.
 	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
 	// so we will just remove it's content
-	entries, err := os.ReadDir(hostDir)
+	// We kept the .so files to avoid removing the agents that are already loaded in the process memory
+	err := removeDir(hostDir)
 	if err != nil {
 		return err
-	}
-	for _, entry := range entries {
-		entryPath := filepath.Join(hostDir, entry.Name())
-		err := os.RemoveAll(entryPath)
-		if err != nil {
-			return err
-		}
 	}
 
 	err = copyDirectories(containerDir, hostDir)
