@@ -146,7 +146,7 @@ func HasSOFiles(dir string) bool {
 		}
 
 		switch ext := filepath.Ext(info.Name()); ext {
-		case ".so", ".node":
+		case ".so", ".node", "node.d", ".a", ".o":
 			hasSOFiles = true
 			return filepath.SkipDir
 		}
