@@ -11,7 +11,7 @@ import (
 func removeFilesInDir(hostDir string) error {
 	return filepath.Walk(hostDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Logger.Info("Error accessing path %s: %v\n", path, err)
+			log.Logger.Info("Error accessing path  %s: %v\n", path, err)
 			return nil // Continue walking
 		}
 
