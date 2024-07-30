@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -21,18 +22,18 @@ func removeFilesInDir(hostDir string) error {
 
 		// Check if the entry is a directory
 		if info.IsDir() {
-			log.Logger.Info("Skipping directory: %s\n", path)
+			log.Logger.Info(fmt.Sprintf("Skipping directory: %s", path))
 			return nil
 		}
 
 		// Check if the file has a .so extension
 		if filepath.Ext(info.Name()) == ".so" {
-			log.Logger.Info("Skipping .so file: %s\n", path)
+			log.Logger.Info(fmt.Sprintf("Skipping .so file: %s", path))
 			return nil
 		}
 
 		// Remove the file
-		log.Logger.Info("Removing file: %s\n", path)
+		log.Logger.Info(fmt.Sprintf("Removing file: %s", path))
 		err = os.Remove(path)
 		if err != nil {
 			log.Logger.Error(err, "Error removing file")
