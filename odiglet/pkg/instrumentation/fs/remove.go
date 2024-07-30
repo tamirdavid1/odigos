@@ -14,7 +14,7 @@ func removeFilesInDir(hostDir string) error {
 			return nil // Continue walking
 		}
 
-		// Skip the root directory itself
+		// Skip the root directory itself]
 		if path == hostDir {
 			return nil
 		}
