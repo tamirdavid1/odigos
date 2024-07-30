@@ -28,7 +28,7 @@ func removeFilesInDir(hostDir string) error {
 
 		// Check if the file has a .so extension
 		switch ext := filepath.Ext(info.Name()); ext {
-		case ".so", ".node", "node.d", ".a", ".o":
+		case ".so", ".node", "node.d", ".a":
 			log.Logger.Info(fmt.Sprintf("Skipping .so files : %s", path))
 			return nil
 		}
