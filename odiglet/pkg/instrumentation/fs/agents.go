@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"errors"
 	"os/exec"
 	"path/filepath"
 	"syscall"
@@ -23,6 +24,7 @@ func CopyAgentsDirectoryToHost() error {
 	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
 	// so we will just remove it's content
 	// We kept the .so files to avoid removing the agents that are already loaded in the process memory
+	log.Logger.Error(errors.New("bla"), "Error removing instrumentation directory from host")
 	err := removeDir(hostDir)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
