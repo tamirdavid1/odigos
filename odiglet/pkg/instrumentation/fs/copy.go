@@ -28,7 +28,9 @@ func getNumberOfWorkers() int {
 
 func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
-	files, err := getFiles(srcDir)
+	hasOSFiles := HasSOFiles(destDir)
+
+	files, err := getFiles(srcDir, hasOSFiles)
 	if err != nil {
 		return err
 	}
@@ -76,13 +78,20 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string) ([]string, error) {
+func getFiles(dir string, hasOSFiles bool) ([]string, error) {
+
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
+			if hasOSFiles {
+				log.Logger.Info("Copying only non .so files")
+				if filepath.Ext(path) != ".so" {
+					return nil
+				}
+			}
 			files = append(files, path)
 		}
 		return nil
@@ -126,4 +135,21 @@ func copyFile(src, dst string, buf []byte) error {
 	}
 
 	return nil
+}
+
+func HasSOFiles(dir string) bool {
+	var hasSOFiles bool
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if filepath.Ext(info.Name()) == ".so" {
+			hasSOFiles = true
+			return filepath.SkipDir
+		}
+		return nil
+	})
+
+	return hasSOFiles
 }
