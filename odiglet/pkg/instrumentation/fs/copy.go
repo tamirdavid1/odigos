@@ -88,8 +88,9 @@ func getFiles(dir string, hasOSFiles bool) ([]string, error) {
 		}
 		if !d.IsDir() {
 			if hasOSFiles {
-				if filepath.Ext(path) == ".so" {
-					log.Logger.Info(fmt.Sprintf("Skipping .so files: %s", path))
+				switch ext := filepath.Ext(path); ext {
+				case ".so", ".node", "node.d", ".a":
+					log.Logger.Info(fmt.Sprintf("Skipping .so files : %s", path))
 					return nil
 				}
 			}
