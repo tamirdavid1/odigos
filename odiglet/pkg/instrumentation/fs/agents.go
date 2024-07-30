@@ -26,6 +26,7 @@ func CopyAgentsDirectoryToHost() error {
 	err := removeDir(hostDir)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
+
 		return err
 	}
 
