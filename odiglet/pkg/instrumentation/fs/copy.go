@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -88,7 +89,7 @@ func getFiles(dir string, hasOSFiles bool) ([]string, error) {
 		if !d.IsDir() {
 			if hasOSFiles {
 				if filepath.Ext(path) == ".so" {
-					log.Logger.Info("Skipping .so files: %s\n", path)
+					log.Logger.Info(fmt.Sprintf("Skipping .so files: %s", path))
 					return nil
 				}
 			}
@@ -144,7 +145,8 @@ func HasSOFiles(dir string) bool {
 			return err
 		}
 
-		if filepath.Ext(info.Name()) == ".so" {
+		switch ext := filepath.Ext(info.Name()); ext {
+		case ".so", ".node":
 			hasSOFiles = true
 			return filepath.SkipDir
 		}
