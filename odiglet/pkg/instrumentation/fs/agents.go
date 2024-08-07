@@ -64,5 +64,6 @@ func CopyAgentsDirectoryToHost() error {
 
 func ShouldRecreateAllCFiles() bool {
 	value, exists := os.LookupEnv("RECREATE_ALL_C_FILES")
+	log.Logger.Info("Should recreate all c files %s", exists && value == "true")
 	return exists && value == "true"
 }
