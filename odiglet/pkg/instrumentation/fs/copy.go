@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -29,9 +28,9 @@ func getNumberOfWorkers() int {
 
 func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
-	hasOSFiles := HasSOFiles(destDir)
+	hostContainCFiles := HostContainCFiles(destDir)
 
-	files, err := getFiles(srcDir, hasOSFiles)
+	files, err := getFiles(srcDir, hostContainCFiles)
 	if err != nil {
 		return err
 	}
@@ -79,7 +78,7 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string, hasOSFiles bool) ([]string, error) {
+func getFiles(dir string, hostContainCFiles bool) ([]string, error) {
 
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -87,10 +86,12 @@ func getFiles(dir string, hasOSFiles bool) ([]string, error) {
 			return err
 		}
 		if !d.IsDir() {
-			if hasOSFiles {
+			// Skip .so/.node files if:
+			// 1. The host directory already contains C files
+			// 2. We don't want to recreate them explicitly using RECREATE_ALL_C_FILES env variable
+			if hostContainCFiles && !ShouldRecreateAllCFiles() {
 				switch ext := filepath.Ext(path); ext {
-				case ".so", ".node", "node.d", ".a":
-					log.Logger.Info(fmt.Sprintf("Skipping .so files : %s", path))
+				case ".so", ".node", ".node.d", ".a":
 					return nil
 				}
 			}
@@ -139,8 +140,8 @@ func copyFile(src, dst string, buf []byte) error {
 	return nil
 }
 
-func HasSOFiles(dir string) bool {
-	var hasSOFiles bool
+func HostContainCFiles(dir string) bool {
+	var hostContainCFiles bool
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -148,11 +149,11 @@ func HasSOFiles(dir string) bool {
 
 		switch ext := filepath.Ext(info.Name()); ext {
 		case ".so", ".node", "node.d", ".a", ".o":
-			hasSOFiles = true
+			hostContainCFiles = true
 			return filepath.SkipDir
 		}
 		return nil
 	})
 
-	return hasSOFiles
+	return hostContainCFiles
 }
