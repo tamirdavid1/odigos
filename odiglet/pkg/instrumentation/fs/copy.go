@@ -30,6 +30,8 @@ func getNumberOfWorkers() int {
 
 func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
+
+	// If host directory already contains C files, skip copying .so/.node files
 	hostContainCFiles := HostContainCFiles(destDir)
 
 	files, err := getFiles(srcDir, hostContainCFiles)
@@ -83,6 +85,9 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 func getFiles(dir string, hostContainCFiles bool) ([]string, error) {
 
 	var files []string
+
+	keepCFiles := !ShouldRecreateAllCFiles()
+
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -90,15 +95,15 @@ func getFiles(dir string, hostContainCFiles bool) ([]string, error) {
 		if !d.IsDir() {
 			// Skip .so/.node files if:
 			// 1. The host directory already contains C files
-			// 2. We don't want to recreate them explicitly using RECREATE_ALL_C_FILES env variable
-			if hostContainCFiles && !ShouldRecreateAllCFiles() {
-				log.Logger.Info(fmt.Sprintf("Copying the file: %s, hostContainCFiles: %s", path, strconv.FormatBool(hostContainCFiles)))
+			// 2. We don't want to recreate them
+			if hostContainCFiles && keepCFiles {
 				switch ext := filepath.Ext(path); ext {
 				case ".so", ".node", ".node.d", ".a":
 					log.Logger.Info(fmt.Sprintf("Skipping copying file: %s", path))
 					return nil
 				}
 			}
+			log.Logger.Info(fmt.Sprintf("Copying the file: %s, hostContainCFiles: %s", path, strconv.FormatBool(hostContainCFiles)))
 			files = append(files, path)
 		}
 		return nil

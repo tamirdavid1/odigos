@@ -10,6 +10,8 @@ import (
 )
 
 func removeFilesInDir(hostDir string) error {
+	keepCFiles := !ShouldRecreateAllCFiles()
+
 	return filepath.Walk(hostDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -24,13 +26,20 @@ func removeFilesInDir(hostDir string) error {
 			return nil
 		}
 
-		if !ShouldRecreateAllCFiles() {
+		if keepCFiles {
 			log.Logger.Info(fmt.Sprintf("removing the file: %s, because Should ShouldRecreateAllCFiles is %s", path, strconv.FormatBool(ShouldRecreateAllCFiles())))
 			switch ext := filepath.Ext(info.Name()); ext {
 			case ".so", ".node", "node.d", ".a":
 				log.Logger.Info(fmt.Sprintf("Skipping removing the file: %s", path))
 				return nil
 			}
+		}
+
+		// Remove the file
+		log.Logger.Info(fmt.Sprintf("Removing the file: %s", path))
+		err = os.Remove(path)
+		if err != nil {
+			return err
 		}
 
 		return nil
