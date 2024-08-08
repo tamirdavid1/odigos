@@ -1,9 +1,11 @@
 package fs
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"syscall"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -23,6 +25,7 @@ func CopyAgentsDirectoryToHost() error {
 	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
 	// so we will just remove it's content
 	// We kept the .so/.node files to avoid removing the instrumentations that are already loaded in the process memory
+
 	err := removeFilesInDir(hostDir)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
@@ -64,6 +67,6 @@ func CopyAgentsDirectoryToHost() error {
 
 func ShouldRecreateAllCFiles() bool {
 	value, exists := os.LookupEnv("RECREATE_ALL_C_FILES")
-	log.Logger.Info("Should recreate all c files %s", exists && value == "true")
+	log.Logger.Info(fmt.Sprintf("Should recreate all c files %s", strconv.FormatBool(exists && value == "true")))
 	return exists && value == "true"
 }

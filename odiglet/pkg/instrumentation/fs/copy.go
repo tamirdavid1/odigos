@@ -1,11 +1,13 @@
 package fs
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
@@ -90,10 +92,10 @@ func getFiles(dir string, hostContainCFiles bool) ([]string, error) {
 			// 1. The host directory already contains C files
 			// 2. We don't want to recreate them explicitly using RECREATE_ALL_C_FILES env variable
 			if hostContainCFiles && !ShouldRecreateAllCFiles() {
-				log.Logger.Info("Copying the file: %s, hostContainCFiles: %s", path, hostContainCFiles)
+				log.Logger.Info(fmt.Sprintf("Copying the file: %s, hostContainCFiles: %s", path, strconv.FormatBool(hostContainCFiles)))
 				switch ext := filepath.Ext(path); ext {
 				case ".so", ".node", ".node.d", ".a":
-					log.Logger.Info("Skipping copying file: %s", path)
+					log.Logger.Info(fmt.Sprintf("Skipping copying file: %s", path))
 					return nil
 				}
 			}
