@@ -33,6 +33,7 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 			return fmt.Errorf("error accessing path %s: %w", path, err)
 		}
 
+		// Skip the main directory
 		if path == hostDir {
 			return nil
 		}
@@ -55,6 +56,11 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 		log.Logger.V(0).Info(fmt.Sprintf("Removing file or directory: %s", path))
 		if err := os.RemoveAll(path); err != nil {
 			return fmt.Errorf("error removing %s: %w", path, err)
+		}
+
+		// Skip further processing in this directory since it has been removed
+		if info.IsDir() {
+			return filepath.SkipDir
 		}
 
 		return nil
