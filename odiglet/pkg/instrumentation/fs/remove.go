@@ -23,9 +23,11 @@ func removeFilesInDir(hostDir string) error {
 			return nil
 		}
 
-		// Skip directories containing "ebpf" in their name
-		if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
-			return nil
+		// Skip directories containing "ebpf" in their name, delete them in case of a full cleanup
+		if !shouldRecreateCFiles {
+			if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
+				return nil
+			}
 		}
 
 		// Remove and skip other directories
