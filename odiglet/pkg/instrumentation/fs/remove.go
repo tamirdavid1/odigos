@@ -33,6 +33,10 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 			return fmt.Errorf("error accessing path %s: %w", path, err)
 		}
 
+		if path == hostDir {
+			return nil
+		}
+
 		// Skip any files listed in filesToKeepMap
 		if !info.IsDir() {
 			if _, found := filesToKeep[path]; found {
