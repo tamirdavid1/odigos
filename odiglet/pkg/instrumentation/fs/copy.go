@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -104,6 +105,7 @@ func getFiles(dir string, CopyCFiles bool, filesToKeepMap map[string]struct{}) (
 		}
 		return nil
 	})
+	fmt.Printf("Files: %v\n", files)
 	return files, err
 }
 

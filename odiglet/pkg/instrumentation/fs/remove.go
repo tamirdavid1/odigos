@@ -10,7 +10,7 @@ import (
 
 func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 	shouldRecreateCFiles := ShouldRecreateAllCFiles()
-	log.Logger.V(0).Info(fmt.Sprintf("Removing files in directory: %s, shouldRecreateCFiles: %s", hostDir, fmt.Sprintf("%t", shouldRecreateCFiles)))
+	log.Logger.V(0).Info(fmt.Sprintf("Removing files in directory: %s, shouldRecreateCFiles: %t", hostDir, shouldRecreateCFiles))
 
 	protectedDirs := make(map[string]bool)
 
@@ -33,20 +33,24 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 			return fmt.Errorf("error accessing path %s: %w", path, err)
 		}
 
-		if info.IsDir() {
-			if protectedDirs[path] {
-				log.Logger.V(0).Info(fmt.Sprintf("Skipping removing protected directory: %s", path))
-				return nil // Skip protected directories
+		// Skip any files listed in filesToKeepMap
+		if !info.IsDir() {
+			if _, found := filesToKeep[path]; found {
+				log.Logger.V(0).Info(fmt.Sprintf("Skipping protected file: %s", path))
+				return nil
 			}
 		}
 
+		// Skip protected directories
+		if info.IsDir() && protectedDirs[path] {
+			log.Logger.V(0).Info(fmt.Sprintf("Skipping protected directory: %s", path))
+			return filepath.SkipDir
+		}
+
 		// Remove unprotected files and directories
-		if !protectedDirs[path] {
-			log.Logger.V(0).Info(fmt.Sprintf("Removing file or directory: %s", path))
-			if err := os.RemoveAll(path); err != nil {
-				return fmt.Errorf("error removing %s: %w", path, err)
-			}
-			return filepath.SkipDir // Skip further processing in removed directories
+		log.Logger.V(0).Info(fmt.Sprintf("Removing file or directory: %s", path))
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("error removing %s: %w", path, err)
 		}
 
 		return nil
