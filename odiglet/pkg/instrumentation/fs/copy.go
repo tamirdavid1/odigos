@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -93,7 +92,6 @@ func getFiles(dir string, CopyCFiles bool, filesToKeepMap map[string]struct{}) (
 			return err
 		}
 		if !d.IsDir() {
-			// If CopyCFiles is false, skip copying files that are in filesToKeepMap
 			if !CopyCFiles {
 				if _, found := filesToKeepMap[strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)]; found {
 					log.Logger.V(0).Info("Skipping copying file", "file", path)
@@ -105,7 +103,7 @@ func getFiles(dir string, CopyCFiles bool, filesToKeepMap map[string]struct{}) (
 		}
 		return nil
 	})
-	fmt.Printf("Files: %v\n", files)
+
 	return files, err
 }
 

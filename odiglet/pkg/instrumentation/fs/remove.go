@@ -12,10 +12,10 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 	shouldRecreateCFiles := ShouldRecreateAllCFiles()
 	log.Logger.V(0).Info(fmt.Sprintf("Removing files in directory: %s, shouldRecreateCFiles: %t", hostDir, shouldRecreateCFiles))
 
+	// Mark directories as protected if they contain a file that needs to be preserved.
+	// If C files should be recreated, skip marking any directories as protected.
 	protectedDirs := make(map[string]bool)
-
 	if !shouldRecreateCFiles {
-		// Mark the directories containing the files as protected
 		for file := range filesToKeep {
 			dir := filepath.Dir(file)
 			for dir != hostDir {
@@ -26,14 +26,11 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 		}
 	}
 
-	fmt.Printf("Protected dirs: %v\n", protectedDirs)
-
 	return filepath.Walk(hostDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("error accessing path %s: %w", path, err)
 		}
 
-		// Skip the main directory
 		if path == hostDir {
 			return nil
 		}
@@ -53,7 +50,6 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 		}
 
 		// Remove unprotected files and directories
-		log.Logger.V(0).Info(fmt.Sprintf("Removing file or directory: %s", path))
 		if err := os.RemoveAll(path); err != nil {
 			return fmt.Errorf("error removing %s: %w", path, err)
 		}
