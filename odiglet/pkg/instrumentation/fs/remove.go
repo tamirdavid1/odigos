@@ -25,7 +25,8 @@ func removeFilesInDir(hostDir string) error {
 
 		// Skip directories containing "ebpf" in their name, delete them in case of a full cleanup
 		if !shouldRecreateCFiles {
-			if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
+			if info.IsDir() && strings.Contains(path, "ebpf") {
+				log.Logger.V(0).Info(fmt.Sprintf("Skipping removing directory: %s", path))
 				return nil
 			}
 		}
@@ -35,6 +36,7 @@ func removeFilesInDir(hostDir string) error {
 			if err := os.RemoveAll(path); err != nil {
 				return fmt.Errorf("error removing directory %s: %w", path, err)
 			}
+			log.Logger.V(0).Info(fmt.Sprintf("Removed directory: %s", path))
 			return filepath.SkipDir
 		}
 
