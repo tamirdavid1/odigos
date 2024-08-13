@@ -49,7 +49,7 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 		// Skip protected directories
 		if info.IsDir() && protectedDirs[path] {
 			log.Logger.V(0).Info(fmt.Sprintf("Skipping protected directory: %s", path))
-			return filepath.SkipDir
+			return nil
 		}
 
 		// Remove unprotected files and directories
