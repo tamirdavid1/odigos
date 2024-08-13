@@ -23,8 +23,13 @@ func removeFilesInDir(hostDir string) error {
 			return nil
 		}
 
+		// Handle directories
 		if info.IsDir() {
-			return nil
+			if strings.Contains(info.Name(), "ebpf") {
+				return nil
+			}
+			// Removing not ebpf directories
+			return os.RemoveAll(path)
 		}
 
 		if !shouldRecreateCFiles {
