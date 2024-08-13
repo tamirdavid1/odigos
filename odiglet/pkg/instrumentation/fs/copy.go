@@ -95,7 +95,7 @@ func getFiles(dir string, CopyCFiles bool, filesToKeepMap map[string]struct{}) (
 		if !d.IsDir() {
 			// If CopyCFiles is false, skip copying files that are in filesToKeepMap
 			if !CopyCFiles {
-				if _, found := filesToKeepMap[path]; found {
+				if _, found := filesToKeepMap[strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)]; found {
 					log.Logger.V(0).Info("Skipping copying file", "file", path)
 					return nil
 				}
