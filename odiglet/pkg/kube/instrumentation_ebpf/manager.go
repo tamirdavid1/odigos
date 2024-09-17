@@ -37,6 +37,8 @@ func (i *podPredicate) Update(e event.UpdateEvent) bool {
 		return true
 	}
 
+	log.Logger.V(0).Info("Status", "old", oldPod.Status.Phase, "new", newPod.Status.Phase)
+
 	// Sum the restart counts for both oldPod and newPod containers, then compare them.
 	// If the newPod has a higher restart count than the oldPod, we need to re-instrument it.
 	// This happens because the pod was abruptly killed, which caused an increment in the restart count.
