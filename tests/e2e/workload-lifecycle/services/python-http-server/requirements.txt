@@ -1,0 +1,6 @@
+Django
+protobuf
+importlib_metadata
+packaging
+asgiref
+asyncio
