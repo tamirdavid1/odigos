@@ -9,7 +9,7 @@ spec:
   - name: Build and Load Test App Images
     try:
     - script:
-        timeout: 100s
+        timeout: 600s
         content: |
           docker build -t nodejs-unsupported-version:v0.0.1 -f services/nodejs-http-server/unsupported-version.Dockerfile services/nodejs-http-server
           kind load docker-image nodejs-unsupported-version:v0.0.1
@@ -23,8 +23,18 @@ spec:
           kind load docker-image nodejs-dockerfile-env:v0.0.1
           docker build -t nodejs-manifest-env:v0.0.1 -f services/nodejs-http-server/manifest-env.Dockerfile services/nodejs-http-server
           kind load docker-image nodejs-manifest-env:v0.0.1
+
           docker build -t cpp-http-server:v0.0.1 -f services/cpp-http-server/Dockerfile services/cpp-http-server
           kind load docker-image cpp-http-server:v0.0.1
+          
+          docker build -t python-latest-version:v0.0.1 -f services/python-http-server/Dockerfile.python-latest services/python-http-server
+          kind load docker-image python-latest-version:v0.0.1
+          docker build -t python-alpine:v0.0.1 -f services/python-http-server/Dockerfile.python-alpine services/python-http-server
+          kind load docker-image python-alpine:v0.0.1
+          docker build -t python-not-supported:v0.0.1 -f services/python-http-server/Dockerfile.python-not-supported-version services/python-http-server
+          kind load docker-image python-not-supported:v0.0.1
+          docker build -t python-min-version:v0.0.1 -f services/python-http-server/Dockerfile.python-min-version services/python-http-server
+          kind load docker-image python-min-version:v0.0.1
 
   - name: Prepare destination
     try:
@@ -52,24 +62,42 @@ spec:
     try:
     - apply:
         file: 01-install-test-apps.yaml
+
+  - name: '01 - Assert Apps installed'
+    try:
     - assert:
         file: 01-assert-apps-installed.yaml
+
   - name: '01 Instrument Namespaces'
-    try:
+    try:  
     - apply:
         file: 01-instrument-ns.yaml
+
+  - name: '01 Assert runtime detection'
+    try: 
     - assert:
         file: 01-assert-runtime-detected.yaml
+
   - name: '01 Add Destination'
     try:
     - apply:
         file: 01-add-destination.yaml
+
+  - name: "01 Assert Pipeline"
+    try:
     - assert:
         file: 01-assert-pipeline.yaml
+
+  - name: "01 Assert Instrumented"
+    try:
     - assert:
         file: 01-assert-instrumented.yaml
+
+  - name: "01 Assert Workloads"
+    try:
     - assert:
         file: 01-assert-workloads.yaml
+
   - name: '01 - Generate Traffic'
     # at this point, we know the expected services are instrumented because we asserted the instrumentation instance
     # send traffic to all services to verify they are working as expected and verify traces for instrumented ones
@@ -108,15 +136,31 @@ spec:
     try:
     - apply:
         file: 02-update-workload-manifests.yaml
+  
+  - name: '02 - Assert Workload update'
+    try:
     - assert:
         file: 02-assert-workload-update.yaml
-  
+
   - name: '02 - Generate Traffic'
     try:
     - script:
         timeout: 60s
         content: |
           set -e
+          NAMESPACE="default"
+          DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
+          
+          
+          for DEPLOYMENT in $DEPLOYMENTS; do
+          echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
+          kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+          if [ $? -ne 0 ]; then
+          echo "Deployment $DEPLOYMENT failed to finish rollout."
+          exit 1
+          fi
+          done
+
           kubectl apply -f 01-generate-traffic.yaml
           job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
           kubectl wait --for=condition=complete job/$job_name
@@ -136,54 +180,3 @@ spec:
               ../../common/flush_traces.sh
             fi
           done
-
-
-  # - name: Verify Trace - Context Propagation
-  #   try:
-  #   - script:
-  #       content: |
-  #         ../../common/traceql_runner.sh tracesql/context-propagation.yaml
-  #   catch:
-  #   - podLogs:
-  #       name: odiglet
-  #       namespace: odigos-system
-  # - name: Verify Trace - Resource Attributes
-  #   try:
-  #   - script:
-  #       content: |
-  #         ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
-  #   catch:
-  #   - podLogs:
-  #       name: odiglet
-  #       namespace: odigos-system
-  # - name: Verify Trace - Span Attributes
-  #   try:
-  #     - script:
-  #         timeout: 60s
-  #         content: |
-  #           ../../common/traceql_runner.sh tracesql/span-attributes.yaml
-  #   catch:
-  #     - podLogs:
-  #         name: odiglet
-  #         namespace: odigos-system
-
-  # - name: Start Odigos UI in background
-  #   try:
-  #    - script:
-  #       timeout: 60s
-  #       content: |
-  #         ../../common/ui-tests/start_odigos_ui.sh
-
-  # - name: Run Cypress tests should pass
-  #   try:
-  #     - script:
-  #         timeout: 60s
-  #         content: |
-  #           ../../common/ui-tests/run_cypress_tests.sh
-
-  # - name: Stop Odigos UI
-  #   try:
-  #     - script:
-  #         timeout: 60s
-  #         content: |
-  #           ../../common/ui-tests/stop_ui_and_clean.sh

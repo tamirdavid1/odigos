@@ -4,3 +4,4 @@ importlib_metadata
 packaging
 asgiref
 asyncio
+django-health-check

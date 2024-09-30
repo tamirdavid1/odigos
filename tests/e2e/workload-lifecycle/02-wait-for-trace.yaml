@@ -5,6 +5,11 @@ query: |
   { resource.service.name = "nodejs-minimum-version" } ||
   { resource.service.name = "nodejs-latest-version" } ||
   { resource.service.name = "nodejs-dockerfile-env" } ||
-  { resource.service.name = "nodejs-manifest-env" }
+  { resource.service.name = "nodejs-manifest-env" } ||
+  { resource.service.name = "cpp-http-server" } ||
+  { resource.service.name = "python-latest-version" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-alpine" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-not-supported" && span.http.route = "insert-random/" } ||
+  { resource.service.name = "python-min-version" && span.http.route = "insert-random/" }
 expected:
-  count: 8 # 4 before +4 new ones
+  count: 14 # 7 before +7 new ones

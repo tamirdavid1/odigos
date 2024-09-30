@@ -7,7 +7,16 @@ from packaging.version import parse, Version
 import importlib_metadata
 import asyncio
 from asgiref.sync import async_to_sync
-from .proto import example_pb2
+
+import sys
+
+
+# Import the protobuf message based on the Python version
+# In our min version test (3.6) protobuf 3.19.6 is used 
+if sys.version_info < (3, 8):
+    from .proto import example_pb2_legacy as example_pb2
+else:
+    from .proto import example_pb2
 
 logger = logging.getLogger()
 

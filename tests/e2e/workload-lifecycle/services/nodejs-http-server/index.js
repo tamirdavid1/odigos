@@ -29,6 +29,7 @@ var app = express();
 
 // Define a route for the root URL that sends "Hello, World!" as the response
 app.get('/', function (req, res) {
+  console.log('Received request for /');
   res.send('Hello, World!');
 });
 
