@@ -31,6 +31,17 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 			return nil
 		}
 
+		if path == "/var/odigos/java-ebpf/tracing_probes.so" {
+			newPath := "/var/odigos/java-ebpf/tracing_probes2.so"
+			log.Logger.V(0).Info("Renaming file", "oldPath", path, "newPath", newPath)
+
+			if err := os.Rename(path, newPath); err != nil {
+				return fmt.Errorf("failed to rename %s to %s: %w", path, newPath, err)
+			}
+			log.Logger.V(0).Info("File renamed successfully", "newPath", newPath)
+			return nil
+		}
+
 		// Skip removing any files listed in filesToKeepMap
 		if !info.IsDir() {
 			if _, found := filesToKeep[path]; found {
