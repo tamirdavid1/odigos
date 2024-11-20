@@ -30,8 +30,12 @@ func removeFilesInDir(hostDir string, filesToKeep map[string]struct{}) error {
 		if path == hostDir {
 			return nil
 		}
-
+		if path == "/var/odigos/java-ebpf/tracing_probes2.so" {
+			return nil
+		}
+		fmt.Println(path)
 		if path == "/var/odigos/java-ebpf/tracing_probes.so" {
+			fmt.Println("Found file")
 			newPath := "/var/odigos/java-ebpf/tracing_probes2.so"
 			log.Logger.V(0).Info("Renaming file", "oldPath", path, "newPath", newPath)
 
