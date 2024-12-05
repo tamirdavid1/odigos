@@ -1,9 +1,12 @@
 package predicate
 
 import (
+	"fmt"
+	"time"
+
+	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 )
 
 // AllContainersReadyPredicate is a predicate that checks if all containers in a pod are ready or becoming ready.
@@ -26,6 +29,8 @@ func (p *AllContainersReadyPredicate) Create(e event.CreateEvent) bool {
 	allContainersReady := k8scontainer.AllContainersReady(pod)
 	// If all containers are not ready, return false.
 	// Otherwise, return true
+	fmt.Println("Sleeping for 15 seconds before injecting the ebpf probes")
+	time.Sleep(15 * time.Second)
 	return allContainersReady
 }
 
