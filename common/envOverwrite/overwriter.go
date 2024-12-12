@@ -33,7 +33,7 @@ var EnvValuesMap = map[string]envValues{
 		programmingLanguage: common.PythonProgrammingLanguage,
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "/var/odigos/python",
-			common.OtelSdkEbpfEnterprise:  "/var/odigos/python-ebpf:/var/odigos/python",
+			common.OtelSdkEbpfEnterprise:  "/var/odigos/python-ebpf:/var/odigos/python/auto-instrumentation:/var/odigos/python",
 		},
 	},
 	"JAVA_OPTS": {
