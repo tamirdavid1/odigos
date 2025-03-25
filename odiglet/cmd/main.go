@@ -1,17 +1,23 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/odiglet"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
+	pb "github.com/odigos-io/odigos/k8sutils/pkg/instrumented_process/proto"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
@@ -65,6 +71,62 @@ func main() {
 		Factories:          ebpfInstrumentationFactories(),
 		DistributionGetter: dg,
 	}
+
+	address := "ui.odigos-system.svc.cluster.local:50051"
+	log.Logger.V(0).Info("Connecting to gRPC server", "address", address)
+
+	conn, err := grpc.Dial(address, grpc.WithInsecure()) // ⚠️ For production: use grpc.WithTransportCredentials
+	if err != nil {
+		log.Logger.V(0).Error(err, "Failed to connect to gRPC server")
+		return
+	}
+	defer conn.Close()
+
+	client := pb.NewProcessServiceClient(conn)
+
+	stream, err := client.SendProcessStream(context.Background())
+	if err != nil {
+		log.Logger.V(0).Error(err, "Could not open gRPC stream")
+		return
+	}
+
+	// Simulate sending a batch of processes
+	batch := &pb.InstrumentedProcessBatch{}
+	for i := 0; i < 3; i++ {
+		process := &pb.InstrumentedProcess{
+			OdigletName:          "odiglet-demo",
+			K8SNodeName:          "node-1",
+			WorkloadName:         "demo-app",
+			WorkloadKind:         "Deployment",
+			K8SPodName:           fmt.Sprintf("demo-pod-%d", i),
+			ProcessPid:           int32(1000 + i),
+			K8SNamespaceName:     "default",
+			K8SContainerName:     "app-container",
+			CreatedAt:            timestamppb.New(time.Now()),
+			TelemetrySdkLanguage: "go",
+			ServiceInstanceId:    "svc-demo",
+			Healthy:              true,
+			HealthyReason:        "Running fine",
+		}
+		batch.Processes = append(batch.Processes, process)
+	}
+
+	log.Logger.V(0).Info("Sending batch of InstrumentedProcesses", "count", len(batch.Processes))
+	if err := stream.Send(batch); err != nil {
+		log.Logger.V(0).Error(err, "Failed to send process batch")
+		return
+	}
+
+	resp, err := stream.Recv()
+	if err != nil {
+		log.Logger.V(0).Error(err, "Failed to receive response from server")
+		return
+	}
+
+	log.Logger.V(0).Info("Received response from gRPC server",
+		"status", resp.Status,
+		"message", resp.Message,
+		"processed_count", resp.ProcessedCount)
 
 	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), instrumentationManagerOptions)
 	if err != nil {

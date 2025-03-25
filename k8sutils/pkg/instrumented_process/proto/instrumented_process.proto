@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/odigos-io/odigos/k8sutils/pkg/instrumented_process/proto;proto";
+
+import "google/protobuf/timestamp.proto";
+
+message InstrumentedProcess {
+  string odiglet_name = 1;              // Agent/collector name
+  string k8s_node_name = 2;             // Kubernetes node
+  string workload_name = 3;             // Kubernetes workload name
+  string workload_kind = 4;             // Kubernetes workload kind [Deployment/StatefulSet/DaemonSet]
+  string k8s_pod_name = 5;              // Kubernetes pod name (PK)
+  int32 process_pid = 6;                // Process ID inside the container (PK)
+  string k8s_namespace_name = 7;        // Kubernetes namespace (PK)
+  string k8s_container_name = 8;        // Container name inside the pod (PK)
+  google.protobuf.Timestamp created_at = 9; // Timestamp when the process was detected (PK)
+  string telemetry_sdk_language = 10;   // Language of the telemetry SDK
+  string service_instance_id = 11;      // Service instance identifier
+  bool healthy = 12;                    // Process health status
+  string healthy_reason = 13;           // Reason for health status (optional)
+}
+
+message InstrumentedProcessBatch {
+  repeated InstrumentedProcess processes = 1;
+}
+
+message ProcessStreamResponse {
+  string status = 1;    // e.g., "received", "saved", "error"
+  string message = 2;   // Optional: Details like "Saved to DB"
+  int32 processed_count = 3; // Number of processes successfully saved
+
+}
+
+service ProcessService {
+  rpc SendProcessStream (stream InstrumentedProcessBatch) returns (stream ProcessStreamResponse);
+}

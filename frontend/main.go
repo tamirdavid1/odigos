@@ -208,6 +208,13 @@ func main() {
 		odigosMetrics.Run(ctx, flags.Namespace)
 	}()
 
+	// Start gRPC server Which is used to receive process data from Odiglets
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		db.StartGRPCServer(ctx)
+	}()
+
 	// Start server
 	r, err := startHTTPServer(&flags, odigosMetrics)
 	if err != nil {
