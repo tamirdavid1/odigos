@@ -76,15 +76,24 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 
 	odigosValueForOtelSdk := possibleValues[otelsdk]
 	if manifestEnvVar.ValueFrom != nil {
+
 		fmt.Println("ValueFrom is not nil")
-		originalName := "ORIGINAL_" + manifestEnvVar.Name
-		manifestEnvVar.Name = originalName
+
+		tempName := "ORIGINAL_" + manifestEnvVar.Name
+
+		originalEnvVarName := manifestEnvVar.Name
+
+		manifestEnvVar.Name = tempName
+
 		fmt.Println("Name: ", manifestEnvVar.Name)
-		// updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
-		// if updatedEnvValue != nil {
-		// manifestEnvVar.Value = *updatedEnvValue
-		// logger.Info("updated manifest environment variable", "envVarName", envVarName, "value", *updatedEnvValue)
-		// }
+
+		a := fmt.Sprintf("${%s}", tempName)
+
+		updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, a, odigosValueForOtelSdk)
+		if updatedEnvValue != nil {
+			newEnvVar := corev1.EnvVar{Name: originalEnvVarName, Value: *updatedEnvValue}
+			container.Env = append(container.Env, newEnvVar)
+		}
 		return true
 	} else {
 		if strings.Contains(manifestEnvVar.Value, "/var/odigos/") {
