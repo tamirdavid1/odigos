@@ -74,18 +74,29 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 	}
 
 	odigosValueForOtelSdk := possibleValues[otelsdk]
-	if strings.Contains(manifestEnvVar.Value, "/var/odigos/") {
-		logger.Info("env var exists in the manifest and already includes odigos values, skipping injection into manifest", "envVarName", envVarName,
-			"container", container.Name)
-		return true // Skip further processing
-	}
+	if manifestEnvVar.ValueFrom != nil {
+		originalName := "ORIGINAL_" + manifestEnvVar.Name
+		manifestEnvVar.Name = originalName
+		updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
+		if updatedEnvValue != nil {
+			manifestEnvVar.Value = *updatedEnvValue
+			logger.Info("updated manifest environment variable", "envVarName", envVarName, "value", *updatedEnvValue)
+		}
+		return true
+	} else {
+		if strings.Contains(manifestEnvVar.Value, "/var/odigos/") {
+			logger.Info("env var exists in the manifest and already includes odigos values, skipping injection into manifest", "envVarName", envVarName,
+				"container", container.Name)
+			return true // Skip further processing
+		}
 
-	updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
-	if updatedEnvValue != nil {
-		manifestEnvVar.Value = *updatedEnvValue
-		logger.Info("updated manifest environment variable", "envVarName", envVarName, "value", *updatedEnvValue)
+		updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
+		if updatedEnvValue != nil {
+			manifestEnvVar.Value = *updatedEnvValue
+			logger.Info("updated manifest environment variable", "envVarName", envVarName, "value", *updatedEnvValue)
+		}
+		return true // Handled, no need for further processing
 	}
-	return true // Handled, no need for further processing
 }
 
 func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, envVarName string,
