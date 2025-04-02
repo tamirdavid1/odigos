@@ -87,7 +87,7 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 
 		fmt.Println("Name: ", manifestEnvVar.Name)
 
-		a := fmt.Sprintf("${%s}", tempName)
+		a := fmt.Sprintf("$(%s)", tempName)
 
 		updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, a, odigosValueForOtelSdk)
 		if updatedEnvValue != nil {
