@@ -239,6 +239,9 @@ func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
 	)
 }
 func isValueFromConfigmap(envVar *corev1.EnvVar) bool {
+	fmt.Println("envVar.ValueFrom.ConfigMapKeyRef", envVar.ValueFrom.ConfigMapKeyRef)
+	fmt.Println("envVar", envVar)
+	fmt.Println("envVar.ValueFrom", envVar.ValueFrom)
 	return envVar.ValueFrom.ConfigMapKeyRef != nil
 }
 func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, originalName, odigosValue string) {
