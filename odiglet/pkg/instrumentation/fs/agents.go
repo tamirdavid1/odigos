@@ -39,6 +39,7 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/java-ebpf/tracing_probes.so":                                                      {},
 		"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
+		"/var/odigos/java-ext-ebpf/javaagent.jar":                                                      {},
 	}
 
 	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
