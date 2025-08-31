@@ -455,7 +455,8 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
+						"app.kubernetes.io/name":   k8sconsts.OdigletAppLabelValue,
+						"odigos.io/collector-role": string(k8sconsts.CollectorsRoleNodeCollector),
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": k8sconsts.OdigletContainerName,

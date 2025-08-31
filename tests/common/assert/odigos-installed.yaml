@@ -80,6 +80,32 @@ spec:
       securityContext:
         privileged: true
     - name: data-collection
+      securityContext:
+        privileged: true
+      env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          (value != null): true
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: data-collection
+              divisor: "0"
+              resource: limits.cpu
+      resources:
+        requests:
+          (memory != null): true
+        limits:
+          (memory != null): true
     - name: deviceplugin
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true

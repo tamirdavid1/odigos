@@ -27,6 +27,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: odiglet
+        odigos.io/collector-role: NODE_COLLECTOR
       annotations:
         kubectl.kubernetes.io/default-container: odiglet
     spec:

@@ -65,17 +65,5 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		return err
 	}
 
-	err = builder.
-		ControllerManagedBy(mgr).
-		Named("odiglet-daemonset").
-		For(&appsv1.DaemonSet{}).
-		WithEventFilter(&odigospredicate.OdigletDaemonSetPredicate).
-		Complete(&OdigletDaemonSetReconciler{
-			Client: mgr.GetClient(),
-		})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

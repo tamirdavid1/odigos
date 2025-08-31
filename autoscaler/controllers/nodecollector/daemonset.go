@@ -48,7 +48,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		defer dm.mu.Unlock()
 		defer dm.finishProgress()
 		defer func() {
-			statusPatchString := common.GetCollectorsGroupDeployedConditionsPatch(err)
+			statusPatchString := common.GetCollectorsGroupDeployedConditionsPatch(err, collection.Spec.Role)
 			statusErr := c.Status().Patch(ctx, collection, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 			if statusErr != nil {
 				logger.Error(statusErr, "Failed to patch collectors group status")
