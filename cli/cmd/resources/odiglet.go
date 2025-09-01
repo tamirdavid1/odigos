@@ -284,9 +284,9 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 		common.LogsObservabilitySignal:    true,
 	}
 
-	collectLogs := signalsEnabled[common.LogsObservabilitySignal]
-	collectMetrics := signalsEnabled[common.MetricsObservabilitySignal]
-	privilegedRequired := collectLogs || collectMetrics
+	logsEnabled := signalsEnabled[common.LogsObservabilitySignal]
+	metricsEnabled := signalsEnabled[common.MetricsObservabilitySignal]
+	privilegedRequired := logsEnabled || metricsEnabled
 
 	if _, ok := odigletOptions.NodeSelector["kubernetes.io/os"]; !ok {
 		odigletOptions.NodeSelector["kubernetes.io/os"] = "linux"
@@ -388,7 +388,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 		},
 	}
 	// Logs volumes
-	if collectLogs {
+	if logsEnabled {
 		baseVolumes = append(baseVolumes,
 			corev1.Volume{
 				Name: "varlog",
@@ -405,7 +405,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 		)
 	}
 	// Metrics volumes
-	if collectMetrics {
+	if metricsEnabled {
 		baseVolumes = append(baseVolumes,
 			corev1.Volume{
 				Name: "hostfs",
@@ -418,13 +418,13 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 
 	// Build the data-collection container mounts (only for its container)
 	dataCollectionMounts := []corev1.VolumeMount{}
-	if collectLogs {
+	if logsEnabled {
 		dataCollectionMounts = append(dataCollectionMounts,
 			corev1.VolumeMount{Name: "varlog", MountPath: "/var/log", ReadOnly: true},
 			corev1.VolumeMount{Name: "varlibdockercontainers", MountPath: "/var/lib/docker/containers", ReadOnly: true},
 		)
 	}
-	if collectMetrics {
+	if metricsEnabled {
 		dataCollectionMounts = append(dataCollectionMounts,
 			corev1.VolumeMount{Name: "hostfs", MountPath: "/hostfs", ReadOnly: true},
 		)
@@ -675,6 +675,14 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 									Name: k8sconsts.NodeNameEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
+									},
+								},
+								{
+									Name: "NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
 									},
 								},
 								{

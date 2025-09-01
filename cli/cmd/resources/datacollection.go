@@ -103,8 +103,6 @@ receivers:
 exporters:
   nop: {}
 
-processors:
-  batch: {}
 
 service:
   extensions: [health_check]
