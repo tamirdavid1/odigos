@@ -120,7 +120,8 @@ func ComputeResourceSizePreset(c *common.OdigosConfiguration) ResourceSizePreset
 
 // MergeSizing lets you reuse the merge logic outside OdigosConfiguration.
 // You pass a base preset and optional override structs.
-func MergeSizing(preset string, gwOverride *common.CollectorGatewayConfiguration, nodeOverride *common.CollectorNodeConfiguration) ResourceSizePreset {
+func MergeSizing(preset string, gwOverride *common.CollectorGatewayConfiguration,
+	nodeOverride *common.CollectorNodeConfiguration) ResourceSizePreset {
 	if !IsValidSizing(preset) {
 		preset = string(SizeMedium)
 	}
