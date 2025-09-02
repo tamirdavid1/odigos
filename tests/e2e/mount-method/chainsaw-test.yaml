@@ -38,6 +38,13 @@ spec:
             timeout: 30s
             content: ../../common/assert_config_value.sh -k mountMethod -v k8s-init-container
 
+    - name: '[1 - Setup] Wait for odiglet to be rolled out'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              kubectl rollout status daemonset/odiglet -n odigos-test --timeout=5m
+
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
       try:
         - assert:
