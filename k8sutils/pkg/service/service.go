@@ -9,13 +9,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 )
 
-func LocalTrafficOTLPGrpcDataCollectionEndpoint(nodeIP string) string {
-	if feature.ServiceInternalTrafficPolicy(feature.GA) {
-		return fmt.Sprintf("%s.%s:%d", k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OTLPPort)
-	}
-	return fmt.Sprintf("%s:%d", nodeIP, consts.OTLPPort)
-}
-
 // LocalTrafficOTLPHttpDataCollectionEndpoint returns the endpoint for the OTLP HTTP data collection pod on the same node.
 // If the internal traffic policy is enabled, the endpoint will use the service name.
 // Otherwise, it will use the node IP.
