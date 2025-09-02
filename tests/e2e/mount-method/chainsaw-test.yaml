@@ -43,6 +43,7 @@ spec:
         - script:
             timeout: 5m
             content: |
+              sleep 5
               kubectl rollout status daemonset/odiglet -n odigos-test --timeout=5m
 
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
