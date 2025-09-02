@@ -665,11 +665,13 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 							Image:   containers.GetImageName(odigletOptions.ImagePrefix, odigletOptions.CollectorImage, odigletOptions.Version),
 							Command: []string{k8sconsts.OdigosNodeCollectorContainerCommand},
 							Args: []string{
-								"--config=" +
-									k8sconsts.OdigosCollectorConfigMapProviderScheme + ":" +
-									odigletOptions.Namespace + "/" +
-									k8sconsts.OdigosNodeCollectorConfigMapName + "/" +
+								fmt.Sprintf(
+									"--config=%s:%s/%s/%s",
+									k8sconsts.OdigosCollectorConfigMapProviderScheme,
+									odigletOptions.Namespace,
+									k8sconsts.OdigosNodeCollectorConfigMapName,
 									k8sconsts.OdigosNodeCollectorConfigMapKey,
+								),
 							},
 							Env: []corev1.EnvVar{
 								{
