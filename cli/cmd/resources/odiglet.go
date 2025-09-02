@@ -126,7 +126,7 @@ func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"instrumentationconfigs/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
-			// Needed for data collection container
+			//  **** Needed for data collection container
 			{ // TODO: remove this after we remove honeycomb custom exporter config
 				// located at: autoscaler/controllers/datacollection/custom/honeycomb.go
 				APIGroups: []string{""},
@@ -148,6 +148,7 @@ func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"endpoints"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			//  **** Needed for data collection container
 		}, finalizersUpdate...),
 	}
 
@@ -274,7 +275,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 		odigletOptions.NodeSelector = make(map[string]string)
 	}
 
-	SizePreset := sizing.GetResourceSizePreset(odigletOptions.ResourceSizePreset)
+	sizePreset := odigletOptions.NodeCollectorSizing
 
 	// Data-collection default: enable all signals (traces, metrics, logs)
 	// TODO: control by configuration later per request
@@ -455,8 +456,8 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name":   k8sconsts.OdigletAppLabelValue,
-						"odigos.io/collector-role": string(k8sconsts.CollectorsRoleNodeCollector),
+						"app.kubernetes.io/name":           k8sconsts.OdigletAppLabelValue,
+						k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector),
 					},
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-container": k8sconsts.OdigletContainerName,
@@ -678,7 +679,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 									},
 								},
 								{
-									Name: "NODE_IP",
+									Name: k8sconsts.NodeIPEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "status.hostIP",
@@ -693,7 +694,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", SizePreset.CollectorNodeConfig.GoMemLimitMib),
+									Value: fmt.Sprintf("%dMiB", sizePreset.GoMemLimitMib),
 								},
 								{
 									Name: "GOMAXPROCS",
@@ -724,12 +725,12 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 							// For PoC we leave Resources empty or set simple defaults; you can thread values later.
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse(fmt.Sprintf("%dm", SizePreset.CollectorNodeConfig.RequestCPUm)),
-									"memory": resource.MustParse(fmt.Sprintf("%dMi", SizePreset.CollectorNodeConfig.RequestMemoryMiB)),
+									"cpu":    resource.MustParse(fmt.Sprintf("%dm", sizePreset.RequestCPUm)),
+									"memory": resource.MustParse(fmt.Sprintf("%dMi", sizePreset.RequestMemoryMiB)),
 								},
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse(fmt.Sprintf("%dm", SizePreset.CollectorNodeConfig.LimitCPUm)),
-									"memory": resource.MustParse(fmt.Sprintf("%dMi", SizePreset.CollectorNodeConfig.LimitMemoryMiB)),
+									"cpu":    resource.MustParse(fmt.Sprintf("%dm", sizePreset.LimitCPUm)),
+									"memory": resource.MustParse(fmt.Sprintf("%dMi", sizePreset.LimitMemoryMiB)),
 								},
 							},
 							VolumeMounts: dataCollectionMounts,
@@ -1017,6 +1018,11 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		a.config.OdigletHealthProbeBindPort = k8sconsts.OdigletDefaultHealthProbeBindPort
 	}
 
+	// Calculate the node collector sizing by starting from the preset sizing
+	// and then applying any overrides defined in the Odigos configuration.
+	collectorSizing := sizing.ComputeResourceSizePreset(a.config)
+	nodeCollectorSizing := collectorSizing.CollectorNodeConfig
+
 	odigletOptions := &OdigletDaemonSetOptions{
 		Namespace:        a.ns,
 		Version:          a.odigosVersion,
@@ -1033,7 +1039,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NodeSelector:                     a.config.NodeSelector,
 		HealthProbeBindPort:              a.config.OdigletHealthProbeBindPort,
 		MountMethod:                      a.config.MountMethod,
-		ResourceSizePreset:               a.config.ResourceSizePreset,
+		NodeCollectorSizing:              nodeCollectorSizing,
 	}
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding

@@ -96,23 +96,41 @@ func GetResourceSizePreset(sizing string) ResourceSizePreset {
 	return configs[Sizing(sizing)]
 }
 
-func ModifyResourceSizePreset(c *common.OdigosConfiguration) {
-	// we want to set the sizing based on the sizing config [default: size_m].
+// ComputeResourceSizePreset computes the resource size preset for the given Odigos configuration.
+func ComputeResourceSizePreset(c *common.OdigosConfiguration) ResourceSizePreset {
+	// pick preset (default to medium if invalid/missing)
 	if !IsValidSizing(c.ResourceSizePreset) {
 		c.ResourceSizePreset = string(SizeMedium)
 	}
 
-	// Start from base sizing config
+	// start from preset
 	base := configs[Sizing(c.ResourceSizePreset)]
 	gw := base.CollectorGatewayConfig
 	node := base.CollectorNodeConfig
 
-	// Overlay ONLY non-zero fields users can set directly to odigos-configuration
+	// overlay user overrides (non-zero only)
 	gw = copyNonZeroGateway(gw, c.CollectorGateway)
 	node = copyNonZeroNode(node, c.CollectorNode)
 
-	c.CollectorGateway = &gw
-	c.CollectorNode = &node
+	return ResourceSizePreset{
+		CollectorGatewayConfig: gw,
+		CollectorNodeConfig:    node,
+	}
+}
+
+// MergeSizing lets you reuse the merge logic outside OdigosConfiguration.
+// You pass a base preset and optional override structs.
+func MergeSizing(preset string, gwOverride *common.CollectorGatewayConfiguration, nodeOverride *common.CollectorNodeConfiguration) ResourceSizePreset {
+	if !IsValidSizing(preset) {
+		preset = string(SizeMedium)
+	}
+	base := configs[Sizing(preset)]
+	gw := copyNonZeroGateway(base.CollectorGatewayConfig, gwOverride)
+	node := copyNonZeroNode(base.CollectorNodeConfig, nodeOverride)
+	return ResourceSizePreset{
+		CollectorGatewayConfig: gw,
+		CollectorNodeConfig:    node,
+	}
 }
 
 var validSizings = map[Sizing]struct{}{

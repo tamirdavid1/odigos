@@ -19,6 +19,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     odigos.io/system-object: "true"
+    odigos.io/preserve: "true"
 data:
   conf: |
     receivers:
