@@ -1,8 +1,8 @@
 package span.gen;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 
@@ -14,29 +14,42 @@ import java.util.logging.Level;
 
 public class JavaSpanGenerator {
     private static final Logger logger = Logger.getLogger(JavaSpanGenerator.class.getName());
-    
+
     public static void main(String[] args) {
         // Get configuration from environment variables
         int spansPerSec = getEnvInt("SPANS_PER_SEC", 1000);
         int spanBytes = getEnvInt("SPAN_BYTES", 1000);
-        
+
         // Log startup information
         logger.info("Starting Java span generator with " + spansPerSec + " spans/sec, " + spanBytes + " bytes per span");
         logger.info("OTEL_SERVICE_NAME: " + System.getenv("OTEL_SERVICE_NAME"));
         logger.info("OTEL_RESOURCE_ATTRIBUTES: " + System.getenv("OTEL_RESOURCE_ATTRIBUTES"));
-        
+
         // Create payload
         String payload = "x".repeat(spanBytes);
-        
-        // Get tracer
-        TracerProvider tracerProvider = TracerProvider.noop();
-        Tracer tracer = tracerProvider.get("java-span-gen");
-        
+
+        // Get tracer from GlobalOpenTelemetry (auto-instrumentation will configure this)
+        Tracer tracer = GlobalOpenTelemetry.getTracer("instrumentation-scope-name", "2.0.0");
+
         // Create scheduled executor for span generation
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        
+
         final int[] totalSpans = {0};
-        
+
+        // Add shutdown hook for graceful termination
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Shutdown signal received, stopping span generator...");
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+            }
+            logger.info("Java span generator stopped. Total spans generated: " + totalSpans[0]);
+        }));
+
         // Schedule span generation every second
         executor.scheduleAtFixedRate(() -> {
             try {
@@ -47,7 +60,7 @@ public class JavaSpanGenerator {
                         .setAttribute(AttributeKey.stringKey("gen"), "java-span-gen")
                         .setAttribute(AttributeKey.longKey("payload_size"), (long) spanBytes)
                         .startSpan();
-                    
+
                     // Simulate some work
                     try {
                         // Add small delay to reduce CPU usage
@@ -56,30 +69,33 @@ public class JavaSpanGenerator {
                         }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
+                        return; // Exit the task if interrupted
                     } finally {
                         span.end();
                     }
                 }
-                
+
                 totalSpans[0] += spansPerSec;
                 logger.info("Generated " + spansPerSec + " spans in this second (total: " + totalSpans[0] + ")");
-                
+
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Error generating spans", e);
             }
         }, 0, 1, TimeUnit.SECONDS);
-        
-        // Keep the application running
-        try {
-            Thread.currentThread().join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.info("Shutting down Java span generator");
-        } finally {
-            executor.shutdown();
+
+        logger.info("Span generator running... Press Ctrl+C to stop");
+
+        // Keep the application running indefinitely
+        while (!executor.isShutdown()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
     }
-    
+
     private static int getEnvInt(String name, int defaultValue) {
         try {
             String value = System.getenv(name);
