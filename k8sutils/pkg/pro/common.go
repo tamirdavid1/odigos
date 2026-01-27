@@ -3,6 +3,7 @@ package pro
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +32,10 @@ func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespa
 		}
 		return err
 	}
-	secret.Data[k8sconsts.OdigosOnpremTokenSecretKey] = []byte(onPremToken)
+	// Trim any whitespace that might have been added
+	trimmedOnpremToken := strings.TrimSpace(onPremToken)
+
+	secret.Data[k8sconsts.OdigosOnpremTokenSecretKey] = []byte(trimmedOnpremToken)
 
 	_, err = client.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
