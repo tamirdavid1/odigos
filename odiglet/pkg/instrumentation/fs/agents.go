@@ -30,7 +30,7 @@ const (
 func CopyAgentsDirectoryToHost() error {
 
 	startTime := time.Now()
-	// We kept the following list of files to avoid removing instrumentations that are already loaded in the process memory
+	// We kept the following list of files and directories to avoid removing instrumentations that are already loaded in the process memory
 	filesToKeep := map[string]struct{}{
 		"/var/odigos/nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
 		"/var/odigos/nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node":                 {},
@@ -42,6 +42,7 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/java-ext-ebpf/otel_agent_extension.jar":                                           {},
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 		"/var/odigos/loader/loader.so":                                                                 {},
+		"/var/odigos/python/google":                                                                    {}, // directory - will be versioned if changed
 	}
 	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
@@ -102,6 +103,22 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		// Convert host path to container path
 		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
 
+		// Check if path exists and whether it's a file or directory
+		hostInfo, hostErr := os.Stat(hostPath)
+		_, containerErr := os.Stat(containerPath)
+
+		// Check if this is a directory
+		isDirectory := hostErr == nil && hostInfo.IsDir()
+
+		if isDirectory {
+			// Handle directories
+			if err := handleDirectoryKeep(hostPath, containerPath, hostErr, containerErr, updatedFilesToKeepMap); err != nil {
+				log.Logger.Error(err, "Error handling directory", "path", hostPath)
+			}
+			continue
+		}
+
+		// Handle files (existing logic)
 		// Find and preserve existing hash version files for this base file
 		existingHashVersionFiles, err := findExistingHashVersionFiles(hostPath)
 		if err != nil {
@@ -115,9 +132,6 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		}
 
 		// If either file doesn't exist, mark as changed and remove from filesToKeepMap
-		_, hostErr := os.Stat(hostPath)
-		_, containerErr := os.Stat(containerPath)
-
 		if hostErr != nil || containerErr != nil {
 			log.Logger.V(0).Info("File marked for recreate (missing)", "file", hostPath)
 			continue
@@ -235,6 +249,177 @@ func calculateFileHash(filePath string) (string, error) {
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
+// handleDirectoryKeep manages directory versioning by comparing directory hashes
+// and renaming old versions with hash suffixes to preserve them
+func handleDirectoryKeep(hostPath, containerPath string, hostErr, containerErr error, keepMap map[string]struct{}) error {
+	// Find and preserve existing hash version directories
+	existingHashVersionDirs, err := findExistingHashVersionDirectories(hostPath)
+	if err != nil {
+		log.Logger.Error(err, "Error finding existing hash version directories", "basePath", hostPath)
+	} else {
+		for _, hashVersionDir := range existingHashVersionDirs {
+			keepMap[hashVersionDir] = struct{}{}
+			log.Logger.V(0).Info("Preserving existing hash version directory", "directory", hashVersionDir)
+		}
+	}
+
+	// If either directory doesn't exist, mark as changed
+	if hostErr != nil || containerErr != nil {
+		log.Logger.V(0).Info("Directory marked for recreate (missing)", "directory", hostPath)
+		return nil
+	}
+
+	// Compare directory hashes using tar
+	hostHash, err := calculateDirectoryHash(hostPath)
+	if err != nil {
+		log.Logger.Error(err, "Error calculating hash for host directory", "directory", hostPath)
+		// If we can't calculate hash, keep the directory as-is
+		keepMap[hostPath] = struct{}{}
+		return nil
+	}
+
+	containerHash, err := calculateDirectoryHash(containerPath)
+	if err != nil {
+		log.Logger.Error(err, "Error calculating hash for container directory", "directory", containerPath)
+		// If we can't calculate hash, keep the directory as-is
+		keepMap[hostPath] = struct{}{}
+		return nil
+	}
+
+	// If hashes are different, rename the old directory with hash suffix
+	if hostHash != containerHash {
+		newHostPath, err := renameDirectoryWithHashSuffix(hostPath, hostHash)
+		if err != nil {
+			log.Logger.Error(err, "Error renaming directory", "directory", hostPath)
+			// If rename fails, keep the directory as-is
+			keepMap[hostPath] = struct{}{}
+			return nil
+		}
+
+		keepMap[newHostPath] = struct{}{}
+		log.Logger.V(0).Info("Directory renamed with hash suffix", "oldPath", hostPath, "newPath", newHostPath)
+		return nil
+	}
+
+	// Hashes match, keep the directory
+	keepMap[hostPath] = struct{}{}
+	return nil
+}
+
+// calculateDirectoryHash computes a hash of directory contents by walking and hashing all files
+func calculateDirectoryHash(dirPath string) (string, error) {
+	var fileHashes []string
+
+	// Walk the directory and collect file hashes
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories, only hash files
+		if info.IsDir() {
+			return nil
+		}
+
+		// Get relative path for consistent hashing
+		relPath, err := filepath.Rel(dirPath, path)
+		if err != nil {
+			return err
+		}
+
+		// Hash the file
+		fileHash, err := calculateFileHash(path)
+		if err != nil {
+			log.Logger.V(0).Info("Skipping file due to hash error", "file", path, "error", err.Error())
+			return nil // Skip files we can't hash rather than failing
+		}
+
+		// Combine relative path and file hash for uniqueness
+		combinedHash := fmt.Sprintf("%s:%s", relPath, fileHash)
+		fileHashes = append(fileHashes, combinedHash)
+
+		return nil
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("failed to walk directory %s: %w", dirPath, err)
+	}
+
+	// Sort to ensure consistent ordering
+	sortStrings(fileHashes)
+
+	// Combine all hashes and hash the result
+	hasher := sha256.New()
+	for _, h := range fileHashes {
+		hasher.Write([]byte(h))
+		hasher.Write([]byte("\n"))
+	}
+
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// sortStrings sorts a slice of strings in place
+func sortStrings(s []string) {
+	// Simple bubble sort - good enough for small lists
+	for i := 0; i < len(s); i++ {
+		for j := i + 1; j < len(s); j++ {
+			if s[i] > s[j] {
+				s[i], s[j] = s[j], s[i]
+			}
+		}
+	}
+}
+
+// renameDirectoryWithHashSuffix renames a directory with a hash suffix
+func renameDirectoryWithHashSuffix(originalPath, dirHash string) (string, error) {
+	hashSuffix := dirHash[:12]
+	newPath := fmt.Sprintf("%s_hash_version-%s", originalPath, hashSuffix)
+
+	if err := os.Rename(originalPath, newPath); err != nil {
+		return "", fmt.Errorf("failed to rename directory %s to %s: %w", originalPath, newPath, err)
+	}
+
+	log.Logger.V(0).Info("Directory successfully renamed", "oldPath", originalPath, "newPath", newPath)
+	return newPath, nil
+}
+
+// findExistingHashVersionDirectories searches for existing directories with _hash_version pattern
+func findExistingHashVersionDirectories(basePath string) ([]string, error) {
+	dir := filepath.Dir(basePath)
+	baseName := filepath.Base(basePath)
+
+	// Create the pattern to search for: dirname_hash_version-*
+	pattern := baseName + "_hash_version-*"
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []string{}, nil
+		}
+		return nil, fmt.Errorf("failed to read directory %s: %w", dir, err)
+	}
+
+	var matchingDirs []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		matched, err := filepath.Match(pattern, entry.Name())
+		if err != nil {
+			log.Logger.Error(err, "Error matching pattern", "pattern", pattern, "dirname", entry.Name())
+			continue
+		}
+
+		if matched {
+			fullPath := filepath.Join(dir, entry.Name())
+			matchingDirs = append(matchingDirs, fullPath)
+		}
+	}
+
+	return matchingDirs, nil
+}
+
 // ApplyOpenShiftSELinuxSettings makes auto-instrumentation agents readable by containers on RHEL hosts.
 // Note: This function calls chroot to use the host's PATH to execute selinux commands. Calling it will
 // affect the odiglet running process's apparent filesystem.
@@ -325,13 +510,15 @@ func isDirEmptyOrNotExist(dir string) (bool, error) {
 // rsync --exclude-from expects patterns relative to the source directory, not absolute paths.
 // Since we're syncing to /var/odigos, we need to convert absolute paths like:
 //
-//	/var/odigos/python-ebpf/pythonUSDT.abi3_hash_version-e3b0c44298fc.so
+//	/var/odigos/python-ebpf/pythonUSDT.abi3_hash_version-e3b0c44298fc.so (file)
+//	/var/odigos/python/google_hash_version-abc123 (directory)
 //
 // to relative patterns like:
 //
 //	python-ebpf/pythonUSDT.abi3_hash_version-e3b0c44298fc.so
+//	python/google_hash_version-abc123
 //
-// This ensures the --delete flag won't remove files we want to keep.
+// This ensures the --delete flag won't remove files or directories we want to keep.
 func writeKeeplist(file string, keeps map[string]struct{}) error {
 	f, err := os.Create(file)
 	if err != nil {
