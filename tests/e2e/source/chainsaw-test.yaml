@@ -127,22 +127,8 @@ spec:
       finally:
         - script:
             timeout: 30s
-            content: |
-              # sh's echo would unescape backslashes in the JSON, so jq reads from a file
-              traces_file=$(mktemp)
-              kubectl get --raw '/api/v1/namespaces/traces/services/simple-trace-db:4318/proxy/v1/traces' > "$traces_file"
-              echo "==== Traces in simple-trace-db: $(jq 'length' "$traces_file")"
-              echo "==== Span count per service"
-              jq -r '[.[][] | .serviceName] | group_by(.) | .[] | "\(.[0]): \(length)"' "$traces_file"
-              echo "==== Services per trace"
-              jq -r 'to_entries[] | "\(.key): \([.value[].serviceName] | unique | join(","))"' "$traces_file"
-              # simple-trace-db drops a trace from every query when one of its spans has a parent missing from the trace
-              echo "==== Spans whose parent is missing from the trace"
-              jq -r 'to_entries[] | .key as $trace | [.value[].spanId] as $ids | .value[] | select((.parentSpanId // "") != "" and (.parentSpanId | IN($ids[]) | not)) | "\($trace): \(.serviceName) \(.kind) \(.name) span=\(.spanId) parent=\(.parentSpanId)"' "$traces_file"
-              echo "==== Spans of traces with more than one service"
-              jq -r 'to_entries[] | select([.value[].serviceName] | unique | length > 1) | "-- trace \(.key)", (.value | sort_by(.startTime)[] | "\(.startTime) \(.serviceName) \(.kind) \(.name) span=\(.spanId) parent=\(.parentSpanId // "")")' "$traces_file"
-              # a failing finally operation fails the step, this report should never fail a passing test
-              exit 0
+            # a failing finally operation fails the step, the report should never fail a passing test
+            content: ../../common/simple_trace_db_report.sh || true
 
     - name: '[2 - Workload Instrumentation] Wait For Shipping Trace (OBI)'
       try:
