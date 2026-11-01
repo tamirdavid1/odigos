@@ -176,14 +176,20 @@ spec:
             content: |
               java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
               kubectl logs $java_pod_name -n default
+      finally:
         - script:
+            timeout: 30s
             content: |
-              traces=$(kubectl get --raw '/api/v1/namespaces/traces/services/simple-trace-db:4318/proxy/v1/traces')
-              echo "==== Traces in simple-trace-db: $(echo "$traces" | jq 'length')"
+              # sh's echo would unescape backslashes in the JSON, so jq reads from a file
+              traces_file=$(mktemp)
+              kubectl get --raw '/api/v1/namespaces/traces/services/simple-trace-db:4318/proxy/v1/traces' > "$traces_file"
+              echo "==== Traces in simple-trace-db: $(jq 'length' "$traces_file")"
               echo "==== Span count per service"
-              echo "$traces" | jq -r '[.[][] | .serviceName] | group_by(.) | .[] | "\(.[0]): \(length)"'
+              jq -r '[.[][] | .serviceName] | group_by(.) | .[] | "\(.[0]): \(length)"' "$traces_file"
               echo "==== Services per trace"
-              echo "$traces" | jq -r 'to_entries[] | "\(.key): \([.value[].serviceName] | unique | join(","))"'
+              jq -r 'to_entries[] | "\(.key): \([.value[].serviceName] | unique | join(","))"' "$traces_file"
+              # a failing finally operation fails the step, this report should never fail a passing test
+              exit 0
 
     - name: Verify Trace - Context Propagation
       try:
