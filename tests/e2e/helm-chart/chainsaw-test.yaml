@@ -178,13 +178,12 @@ spec:
               kubectl logs $java_pod_name -n default
         - script:
             content: |
-              # jmespath "length(@) > `0`" url-encoded, matches every trace
-              traces=$(kubectl get --raw '/api/v1/namespaces/traces/services/simple-trace-db:4318/proxy/v1/traces?jmespath=length(%40)%20%3E%20%600%60')
+              traces=$(kubectl get --raw '/api/v1/namespaces/traces/services/simple-trace-db:4318/proxy/v1/traces')
               echo "==== Traces in simple-trace-db: $(echo "$traces" | jq 'length')"
               echo "==== Span count per service"
-              echo "$traces" | jq -r '[.[][] | .span.serviceName] | group_by(.) | .[] | "\(.[0]): \(length)"'
+              echo "$traces" | jq -r '[.[][] | .serviceName] | group_by(.) | .[] | "\(.[0]): \(length)"'
               echo "==== Services per trace"
-              echo "$traces" | jq -r 'to_entries[] | "\(.key): \([.value[].span.serviceName] | unique | join(","))"'
+              echo "$traces" | jq -r 'to_entries[] | "\(.key): \([.value[].serviceName] | unique | join(","))"'
 
     - name: Verify Trace - Context Propagation
       try:
