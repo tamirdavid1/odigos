@@ -306,7 +306,7 @@ spec:
     spec:
       containers:
         - name: membership
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.44
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.45
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
