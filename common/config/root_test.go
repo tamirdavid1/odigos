@@ -573,10 +573,10 @@ func TestTracesPipelineSplitAfterGroupByTrace(t *testing.T) {
 	enabled := true
 	wait := "45s"
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
-		OdigosNamespace:              "odigos-system",
-		OdigosConfigExtensionName:    &ext,
-		TailSamplingEnabled:          &enabled,
-		TraceAggregationWaitDuration: &wait,
+		OdigosNamespace:           "odigos-system",
+		OdigosConfigExtensionName: &ext,
+		TailSamplingEnabled:       &enabled,
+		TraceAggregation:          &common.TraceAggregationConfiguration{SyncWait: &wait, AsyncWait: &wait},
 	}
 	cfg, err, _, signals := pipelinegen.CalculateGatewayConfig(
 		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
@@ -614,10 +614,10 @@ func TestTracesPipelineSplitWithAdditionalProcessors(t *testing.T) {
 	enabled := true
 	wait := "45s"
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
-		OdigosNamespace:              "odigos-system",
-		OdigosConfigExtensionName:    &ext,
-		TailSamplingEnabled:          &enabled,
-		TraceAggregationWaitDuration: &wait,
+		OdigosNamespace:           "odigos-system",
+		OdigosConfigExtensionName: &ext,
+		TailSamplingEnabled:       &enabled,
+		TraceAggregation:          &common.TraceAggregationConfiguration{SyncWait: &wait, AsyncWait: &wait},
 	}
 	processors := []config.ProcessorConfigurer{
 		DummyProcessor{ID: "generic-batch-processor", Type: "batch"},

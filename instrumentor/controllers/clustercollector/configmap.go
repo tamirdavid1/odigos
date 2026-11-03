@@ -176,9 +176,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 
 	tailSamplingEnabled := false
-	waitDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
 	// TailSampling is nil when inactive, non-nil when the scheduler has resolved it as active.
-	// TraceAggregationWaitDuration is already validated and defaulted by the scheduler.
 	if gateway.Spec.TailSampling != nil {
 		if gateway.Spec.TailSampling.Disabled != nil && !*gateway.Spec.TailSampling.Disabled {
 			tailSamplingEnabled = true
@@ -186,13 +184,6 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				gatewayOptions.SamplingDryRun = *gateway.Spec.SamplingDryRun
 			}
 		}
-		if gateway.Spec.TailSampling.TraceAggregationWaitDuration != nil && *gateway.Spec.TailSampling.TraceAggregationWaitDuration != "" {
-			waitDuration = *gateway.Spec.TailSampling.TraceAggregationWaitDuration
-		}
-	}
-
-	if tailSamplingEnabled {
-		gatewayOptions.TraceAggregationWaitDuration = &waitDuration
 	}
 	gatewayOptions.TailSamplingEnabled = &tailSamplingEnabled
 
@@ -207,6 +198,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
+		gatewayOptions.TraceAggregation = traceAggregationOptions(k8slogger.FromContext(ctx), &odigosCfg)
 	}
 	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
 	gatewayOptions.Insights = insightsCfg
@@ -216,13 +208,6 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	// the gateway's gRPC client round_robins across insights replicas.
 	if odigoscommon.InsightsPipelineActive(insightsCfg) {
 		gatewayOptions.InsightsOtlpEndpoint = k8sconsts.InsightsOtlpGrpcDNSEndpoint(env.GetCurrentNamespace())
-	}
-	// Insights can trigger groupbytrace without tail sampling on, in which case
-	// the scheduler hasn't resolved TraceAggregationWaitDuration. Fall back to the
-	// canonical default so we never feed groupbytrace a nil wait.
-	if gatewayOptions.TraceAggregationWaitDuration == nil && odigoscommon.InsightsPipelineActive(insightsCfg) {
-		def := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
-		gatewayOptions.TraceAggregationWaitDuration = &def
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(

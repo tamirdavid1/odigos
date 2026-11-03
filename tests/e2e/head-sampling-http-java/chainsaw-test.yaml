@@ -35,7 +35,8 @@ spec:
                 --set image.tag=e2e-test \
                 --set nodeSelector."kubernetes\.io/os"=linux \
                 --set sampling.dryRun=true \
-                --set sampling.tailSampling.traceAggregationWaitDuration=2s \
+                --set collectorGateway.traceAggregation.syncWait=10s \
+                --set collectorGateway.traceAggregation.rootSettle=2s \
                 --set sampling.k8sHealthProbesSampling.enabled=true
               ../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
@@ -101,8 +102,8 @@ spec:
             content: |
               kubectl wait --for=condition=complete job/head-sampling-http-server-curls -n default --timeout=180s || \
                 (kubectl logs job/head-sampling-http-server-curls -n default --tail=200; exit 1)
-              # Wait for gateway groupbytrace aggregation (traceAggregationWaitDuration=2s) plus export.
-              sleep 5
+              # Traces with a root are released rootSettle (2s) after it; rootless ones wait syncWait (10s). Plus export.
+              sleep 12
 
     - name: Assert sampling span attributes
       try:

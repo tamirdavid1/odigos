@@ -451,6 +451,42 @@ collectorGateway:
 
   # @schema
   # description: |-
+  #   How the gateway groups spans into whole traces before tail sampling and Insights.
+  #   Unset fields keep the defaults shown.
+  # @schema
+  traceAggregation:
+    # @schema
+    # type: string
+    # description: |-
+    #   longest a trace without async (PRODUCER/CONSUMER) spans is held before it is sent on.
+    # @schema
+    # syncWait: 30s
+
+    # @schema
+    # type: string
+    # description: |-
+    #   longest a trace with a PRODUCER or CONSUMER span is held,
+    #   since its consumer side can arrive long after the root span.
+    # @schema
+    # asyncWait: 30s
+
+    # @schema
+    # type: string
+    # description: |-
+    #   send a trace once its root span arrived and no new span came for this long,
+    #   instead of waiting the full syncWait. "0s" disables it.
+    # @schema
+    # rootSettle: 7s
+
+    # @schema
+    # type: integer
+    # description: |-
+    #   max traces buffered; when full, the oldest trace is sent early.
+    # @schema
+    # maxTraces: 200000
+
+  # @schema
+  # description: |-
   #   Service Graph settings
   #   Service Graph is a feature that allows you to visualize the service graph of your application.
   #   It is enabled by default and can be disabled by setting the disabled flag to true.
@@ -2068,6 +2104,8 @@ sampling:
     #   also increases memory usage for keeping spans in memory until the wait duration time is reached.
     #   setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
     #   and broken traces due to sampling each trace in few pieces.
+    #   Deprecated: Use collectorGateway.traceAggregation.syncWait and asyncWait instead, which also apply
+    #   when only Insights needs whole traces. Still honored when those are unset. Here for backwards compatibility with helm schema.
     # @schema
     # traceAggregationWaitDuration: '30s'
 

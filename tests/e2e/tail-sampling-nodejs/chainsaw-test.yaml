@@ -34,7 +34,8 @@ spec:
                 --set image.tag=e2e-test \
                 --set nodeSelector."kubernetes\.io/os"=linux \
                 --set sampling.dryRun=true \
-                --set sampling.tailSampling.traceAggregationWaitDuration=2s \
+                --set collectorGateway.traceAggregation.syncWait=10s \
+                --set collectorGateway.traceAggregation.rootSettle=2s \
                 --set ownTelemetry.metricsStore.disabled=false
               ../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"

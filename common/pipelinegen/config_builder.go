@@ -46,9 +46,10 @@ type GatewayConfigOptions struct {
 	// the extension and it's name are platform specific.
 	OdigosConfigExtensionName *string
 
-	// groupbytrace wait duration when tail sampling, service I/O trace
-	// correlations, or insights are active.
-	TraceAggregationWaitDuration *string
+	// odigosgroupbytrace settings when tail sampling, service I/O trace
+	// correlations, or insights are active. Only set fields are written, so
+	// the rest keep the processor defaults.
+	TraceAggregation *common.TraceAggregationConfiguration
 
 	// Tail sampling v2 processors when tail sampling is active.
 	TailSamplingEnabled    *bool
@@ -652,8 +653,6 @@ func insertClusterMetricsResources(currentConfig *config.Config, odigosNs string
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
 
-const defaultTraceAggregationWaitDuration = "30s"
-
 func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
 	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled {
 		return true
@@ -675,17 +674,22 @@ func ensureGroupByTraceProcessor(
 		return
 	}
 
-	waitDuration := defaultTraceAggregationWaitDuration
-	if gatewayOptions.TraceAggregationWaitDuration != nil && *gatewayOptions.TraceAggregationWaitDuration != "" {
-		waitDuration = *gatewayOptions.TraceAggregationWaitDuration
+	processorCfg := config.GenericMap{}
+	if t := gatewayOptions.TraceAggregation; t != nil {
+		if t.SyncWait != nil {
+			processorCfg["sync_wait"] = *t.SyncWait
+		}
+		if t.AsyncWait != nil {
+			processorCfg["async_wait"] = *t.AsyncWait
+		}
+		if t.RootSettle != nil {
+			processorCfg["root_settle"] = *t.RootSettle
+		}
+		if t.MaxTraces != nil {
+			processorCfg["max_traces"] = *t.MaxTraces
+		}
 	}
-
-	// traceAggregationWaitDuration predates the separate HTTP/async waits, so it
-	// sets both; root_settle and the caps keep the processor defaults.
-	currentConfig.Processors[consts.GroupByTraceProcessor] = config.GenericMap{
-		"sync_wait":  waitDuration,
-		"async_wait": waitDuration,
-	}
+	currentConfig.Processors[consts.GroupByTraceProcessor] = processorCfg
 	processorsResults.TracesProcessors = append(
 		[]string{consts.GroupByTraceProcessor},
 		processorsResults.TracesProcessors...,

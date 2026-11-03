@@ -407,6 +407,38 @@
           },
           "title": "serviceGraphVirtualNodePeerAttributes",
           "type": "array"
+        },
+        "traceAggregation": {
+          "additionalProperties": false,
+          "description": "How the gateway groups spans into whole traces before tail sampling and Insights.\nUnset fields keep the defaults shown.",
+          "properties": {
+            "asyncWait": {
+              "default": "30s",
+              "description": "longest a trace with a PRODUCER or CONSUMER span is held,\nsince its consumer side can arrive long after the root span.",
+              "title": "asyncWait",
+              "type": "string"
+            },
+            "maxTraces": {
+              "default": 200000,
+              "description": "max traces buffered; when full, the oldest trace is sent early.",
+              "title": "maxTraces",
+              "type": "integer"
+            },
+            "rootSettle": {
+              "default": "7s",
+              "description": "send a trace once its root span arrived and no new span came for this long,\ninstead of waiting the full syncWait. \"0s\" disables it.",
+              "title": "rootSettle",
+              "type": "string"
+            },
+            "syncWait": {
+              "default": "30s",
+              "description": "longest a trace without async (PRODUCER/CONSUMER) spans is held before it is sent on.",
+              "title": "syncWait",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "traceAggregation"
         }
       },
       "required": [],
@@ -2426,7 +2458,7 @@
             },
             "traceAggregationWaitDuration": {
               "default": "30s",
-              "description": "time to wait from the first span of a trace until a trace is considered completed.\nat this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.\nintroduces this amount of latency in the pipeline and for trace to hit the destination.\nalso increases memory usage for keeping spans in memory until the wait duration time is reached.\nsetting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,\nand broken traces due to sampling each trace in few pieces.",
+              "description": "time to wait from the first span of a trace until a trace is considered completed.\nat this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.\nintroduces this amount of latency in the pipeline and for trace to hit the destination.\nalso increases memory usage for keeping spans in memory until the wait duration time is reached.\nsetting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,\nand broken traces due to sampling each trace in few pieces.\nDeprecated: Use collectorGateway.traceAggregation.syncWait and asyncWait instead, which also apply\nwhen only Insights needs whole traces. Still honored when those are unset. Here for backwards compatibility with helm schema.",
               "required": [],
               "title": "traceAggregationWaitDuration"
             }

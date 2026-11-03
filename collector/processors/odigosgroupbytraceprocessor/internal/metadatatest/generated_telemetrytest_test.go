@@ -10,8 +10,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 
-	"github.com/odigos-io/odigos/collector/processors/odigosgroupbytraceprocessor/internal/metadata"
 	"go.opentelemetry.io/collector/component/componenttest"
+
+	"github.com/odigos-io/odigos/collector/processors/odigosgroupbytraceprocessor/internal/metadata"
 )
 
 func TestSetupTelemetry(t *testing.T) {
