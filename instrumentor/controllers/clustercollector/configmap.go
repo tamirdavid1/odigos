@@ -219,7 +219,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 	// Insights can trigger groupbytrace without tail sampling on, in which case
 	// the scheduler hasn't resolved TraceAggregationWaitDuration. Fall back to the
-	// canonical default so we never feed groupbytrace a nil wait_duration.
+	// canonical default so we never feed groupbytrace a nil wait.
 	if gatewayOptions.TraceAggregationWaitDuration == nil && odigoscommon.InsightsPipelineActive(insightsCfg) {
 		def := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
 		gatewayOptions.TraceAggregationWaitDuration = &def

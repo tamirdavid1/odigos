@@ -64,6 +64,7 @@ exporters:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.159.0
 
 processors:
+  - gomod: github.com/odigos-io/odigos/collector/processors/odigosgroupbytraceprocessor v0.159.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.159.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.159.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.159.0
@@ -137,6 +138,7 @@ replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter => ../exporters/mockdestinationexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
+  - github.com/odigos-io/odigos/collector/processors/odigosgroupbytraceprocessor => ../processors/odigosgroupbytraceprocessor
   - github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor => ../processors/odigostailsamplingprocessor
   - github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
   - github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor => ../processors/odigoslogsresourceattrsprocessor

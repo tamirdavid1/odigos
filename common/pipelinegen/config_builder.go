@@ -680,8 +680,11 @@ func ensureGroupByTraceProcessor(
 		waitDuration = *gatewayOptions.TraceAggregationWaitDuration
 	}
 
+	// traceAggregationWaitDuration predates the separate HTTP/async waits, so it
+	// sets both; root_settle and the caps keep the processor defaults.
 	currentConfig.Processors[consts.GroupByTraceProcessor] = config.GenericMap{
-		"wait_duration": waitDuration,
+		"sync_wait":  waitDuration,
+		"async_wait": waitDuration,
 	}
 	processorsResults.TracesProcessors = append(
 		[]string{consts.GroupByTraceProcessor},

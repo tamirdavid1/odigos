@@ -21,6 +21,7 @@ require (
 	github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor v0.159.0
 	github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor v0.159.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.159.0
+	github.com/odigos-io/odigos/collector/processors/odigosgroupbytraceprocessor v0.159.0
 	github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.159.0
 	github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.159.0
 	github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.159.0
@@ -785,6 +786,8 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporte
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter => ../exporters/mockdestinationexporter
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
+
+replace github.com/odigos-io/odigos/collector/processors/odigosgroupbytraceprocessor => ../processors/odigosgroupbytraceprocessor
 
 replace github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor => ../processors/odigostailsamplingprocessor
 
