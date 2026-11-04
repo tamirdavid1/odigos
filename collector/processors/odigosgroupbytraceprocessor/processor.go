@@ -284,8 +284,7 @@ func (*groupByTraceProcessor) Capabilities() consumer.Capabilities {
 func (p *groupByTraceProcessor) Start(context.Context, component.Host) error {
 	p.stop = make(chan struct{})
 	for _, s := range p.shards {
-		p.wg.Add(1)
-		go p.releaseLoop(s)
+		p.wg.Go(func() { p.releaseLoop(s) })
 	}
 	return nil
 }
@@ -355,7 +354,6 @@ func (p *groupByTraceProcessor) shardFor(id pcommon.TraceID) *shard {
 // releaseLoop releases a shard's expired traces one at a time, so a slow next
 // consumer holds traces in the bounded buffer instead of piling up goroutines.
 func (p *groupByTraceProcessor) releaseLoop(s *shard) {
-	defer p.wg.Done()
 	ticker := time.NewTicker(releaseTick)
 	defer ticker.Stop()
 	for {

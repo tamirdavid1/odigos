@@ -18,8 +18,8 @@ Spans that arrived after their trace was released, by how that trace was release
 
 | Name | Description | Values | Semantic Convention |
 | ---- | ----------- | ------ | ------------------- |
-| class | Wait class of the trace. | Str: ``sync``, ``async`` | - |
-| reason | Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
+| class | Which wait applies to the trace: sync for traces without PRODUCER/CONSUMER spans (held up to sync_wait), async for traces with them (held up to async_wait). | Str: ``sync``, ``async`` | - |
+| reason | How the trace was released. settled: its root span arrived and no new span came for root_settle. timeout: it was held for the full sync_wait or async_wait. evicted: the buffer reached max_traces and it was the oldest trace. shutdown: the collector was stopping. long_running (late_spans and late_traces only): the late span lasted longer than the wait itself, so no wait setting would have caught it. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
 
 ### otelcol_odigos.groupbytrace.late_traces
 
@@ -33,8 +33,8 @@ Traces that got spans after they were released, so they reached the next consume
 
 | Name | Description | Values | Semantic Convention |
 | ---- | ----------- | ------ | ------------------- |
-| class | Wait class of the trace. | Str: ``sync``, ``async`` | - |
-| reason | Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
+| class | Which wait applies to the trace: sync for traces without PRODUCER/CONSUMER spans (held up to sync_wait), async for traces with them (held up to async_wait). | Str: ``sync``, ``async`` | - |
+| reason | How the trace was released. settled: its root span arrived and no new span came for root_settle. timeout: it was held for the full sync_wait or async_wait. evicted: the buffer reached max_traces and it was the oldest trace. shutdown: the collector was stopping. long_running (late_spans and late_traces only): the late span lasted longer than the wait itself, so no wait setting would have caught it. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
 
 ### otelcol_odigos.groupbytrace.spans_in_memory
 
@@ -56,8 +56,8 @@ Spans released to the next consumer.
 
 | Name | Description | Values | Semantic Convention |
 | ---- | ----------- | ------ | ------------------- |
-| reason | Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
-| class | Wait class of the trace. | Str: ``sync``, ``async`` | - |
+| reason | How the trace was released. settled: its root span arrived and no new span came for root_settle. timeout: it was held for the full sync_wait or async_wait. evicted: the buffer reached max_traces and it was the oldest trace. shutdown: the collector was stopping. long_running (late_spans and late_traces only): the late span lasted longer than the wait itself, so no wait setting would have caught it. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
+| class | Which wait applies to the trace: sync for traces without PRODUCER/CONSUMER spans (held up to sync_wait), async for traces with them (held up to async_wait). | Str: ``sync``, ``async`` | - |
 
 ### otelcol_odigos.groupbytrace.traces_in_memory
 
@@ -79,8 +79,8 @@ Traces released to the next consumer.
 
 | Name | Description | Values | Semantic Convention |
 | ---- | ----------- | ------ | ------------------- |
-| reason | Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
-| class | Wait class of the trace. | Str: ``sync``, ``async`` | - |
+| reason | How the trace was released. settled: its root span arrived and no new span came for root_settle. timeout: it was held for the full sync_wait or async_wait. evicted: the buffer reached max_traces and it was the oldest trace. shutdown: the collector was stopping. long_running (late_spans and late_traces only): the late span lasted longer than the wait itself, so no wait setting would have caught it. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
+| class | Which wait applies to the trace: sync for traces without PRODUCER/CONSUMER spans (held up to sync_wait), async for traces with them (held up to async_wait). | Str: ``sync``, ``async`` | - |
 
 ### otelcol_odigos.memory_pressure.spans
 
