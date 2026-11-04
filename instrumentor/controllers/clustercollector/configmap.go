@@ -186,6 +186,8 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		}
 	}
 	gatewayOptions.TailSamplingEnabled = &tailSamplingEnabled
+	// Resolved and validated from collectorGateway.traceAggregation by the collectorsgroup controller.
+	gatewayOptions.TraceAggregation = gateway.Spec.TraceAggregation
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
@@ -198,7 +200,6 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
-		gatewayOptions.TraceAggregation = traceAggregationOptions(k8slogger.FromContext(ctx), &odigosCfg)
 	}
 	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
 	gatewayOptions.Insights = insightsCfg

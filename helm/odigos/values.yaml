@@ -2113,7 +2113,7 @@ sampling:
     #   setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
     #   and broken traces due to sampling each trace in few pieces.
     #   Deprecated: Use collectorGateway.traceAggregation.syncWait and asyncWait instead, which also apply
-    #   when only Insights needs whole traces. Still honored when those are unset. Here for backwards compatibility with helm schema.
+    #   when only Insights needs whole traces. Ignored; kept only for backwards compatibility with helm schema.
     # @schema
     # traceAggregationWaitDuration: '30s'
 

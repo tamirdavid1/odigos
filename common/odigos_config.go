@@ -287,6 +287,7 @@ type CollectorGatewayConfiguration struct {
 
 // TraceAggregationConfiguration tunes the gateway's odigosgroupbytrace processor.
 // Durations use Go syntax (for example "30s").
+// +kubebuilder:object:generate=true
 type TraceAggregationConfiguration struct {
 	// SyncWait is the longest a trace without PRODUCER/CONSUMER spans is held
 	// before it is sent on. Default 30s.
