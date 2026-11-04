@@ -102,8 +102,9 @@ spec:
             content: |
               kubectl wait --for=condition=complete job/head-sampling-http-server-curls -n default --timeout=180s || \
                 (kubectl logs job/head-sampling-http-server-curls -n default --tail=200; exit 1)
-              # Traces with a root are released rootSettle (2s) after it; rootless ones wait syncWait (10s). Plus export.
-              sleep 12
+              # Traces with a root are released rootSettle (2s) after it, plus export. The assert step below
+              # polls, so traces without a root (released at syncWait, 10s) are still caught.
+              sleep 5
 
     - name: Assert sampling span attributes
       try:
