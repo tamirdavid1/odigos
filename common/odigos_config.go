@@ -303,6 +303,11 @@ type TraceAggregationConfiguration struct {
 	// MaxTraces caps how many traces are buffered; when full, the oldest trace is
 	// sent early. Default 200000.
 	MaxTraces *int `json:"maxTraces,omitempty"`
+
+	// LateSpansMaxMemoryMiB bounds the memory used to remember sent traces so spans
+	// arriving after them are counted in the late_spans metric. 0 disables that
+	// tracking. Default 70.
+	LateSpansMaxMemoryMiB *int `json:"lateSpansMaxMemoryMiB,omitempty"`
 }
 
 type UserInstrumentationEnvs struct {

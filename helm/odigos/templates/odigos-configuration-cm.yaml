@@ -173,6 +173,9 @@ data:
         {{- if .maxTraces }}
         maxTraces: {{ .maxTraces | int }}
         {{- end }}
+        {{- if hasKey . "lateSpansMaxMemoryMiB" }}
+        lateSpansMaxMemoryMiB: {{ .lateSpansMaxMemoryMiB | int }}
+        {{- end }}
       {{- end }}
     {{- end }}
     {{- if .Values.collectorNode }}

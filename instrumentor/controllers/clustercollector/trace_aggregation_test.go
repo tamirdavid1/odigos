@@ -39,10 +39,10 @@ func TestTraceAggregationOptions(t *testing.T) {
 		{
 			name: "new fields pass through",
 			cfg: gateway(&common.TraceAggregationConfiguration{
-				SyncWait: ptr("20s"), AsyncWait: ptr("45s"), RootSettle: ptr("5s"), MaxTraces: ptr(1000),
+				SyncWait: ptr("20s"), AsyncWait: ptr("45s"), RootSettle: ptr("5s"), MaxTraces: ptr(1000), LateSpansMaxMemoryMiB: ptr(16),
 			}),
 			want: common.TraceAggregationConfiguration{
-				SyncWait: ptr("20s"), AsyncWait: ptr("45s"), RootSettle: ptr("5s"), MaxTraces: ptr(1000),
+				SyncWait: ptr("20s"), AsyncWait: ptr("45s"), RootSettle: ptr("5s"), MaxTraces: ptr(1000), LateSpansMaxMemoryMiB: ptr(16),
 			},
 		},
 		{
@@ -58,13 +58,13 @@ func TestTraceAggregationOptions(t *testing.T) {
 		{
 			name: "invalid values fall back to the defaults",
 			cfg: gateway(&common.TraceAggregationConfiguration{
-				SyncWait: ptr("soon"), AsyncWait: ptr("0s"), RootSettle: ptr("-1s"), MaxTraces: ptr(0),
+				SyncWait: ptr("soon"), AsyncWait: ptr("0s"), RootSettle: ptr("-1s"), MaxTraces: ptr(0), LateSpansMaxMemoryMiB: ptr(-1),
 			}),
 		},
 		{
-			name: "zero root settle disables it",
-			cfg:  gateway(&common.TraceAggregationConfiguration{RootSettle: ptr("0s")}),
-			want: common.TraceAggregationConfiguration{RootSettle: ptr("0s")},
+			name: "zero root settle and late span memory disable them",
+			cfg:  gateway(&common.TraceAggregationConfiguration{RootSettle: ptr("0s"), LateSpansMaxMemoryMiB: ptr(0)}),
+			want: common.TraceAggregationConfiguration{RootSettle: ptr("0s"), LateSpansMaxMemoryMiB: ptr(0)},
 		},
 	}
 	for _, tt := range tests {
@@ -87,7 +87,7 @@ func TestGatewayConfig_GroupByWritesOnlySetFields(t *testing.T) {
 		TailSamplingEnabled:       &tailSampling,
 		Insights:                  insightsCfg,
 		InsightsOtlpEndpoint:      k8sconsts.InsightsOtlpGrpcDNSEndpoint("odigos-system"),
-		TraceAggregation:          &common.TraceAggregationConfiguration{RootSettle: ptr("3s"), MaxTraces: ptr(5000)},
+		TraceAggregation:          &common.TraceAggregationConfiguration{RootSettle: ptr("3s"), MaxTraces: ptr(5000), LateSpansMaxMemoryMiB: ptr(0)},
 	}
 
 	cfg, err, _, _ := pipelinegen.CalculateGatewayConfig(nil, nil,
@@ -100,5 +100,5 @@ func TestGatewayConfig_GroupByWritesOnlySetFields(t *testing.T) {
 		nil, &gatewayOptions)
 	require.NoError(t, err)
 
-	assert.Equal(t, config.GenericMap{"root_settle": "3s", "max_traces": 5000}, cfg.Processors[odigosconsts.GroupByTraceProcessor])
+	assert.Equal(t, config.GenericMap{"root_settle": "3s", "max_traces": 5000, "late_spans_max_memory_mib": 0}, cfg.Processors[odigosconsts.GroupByTraceProcessor])
 }

@@ -51,6 +51,13 @@ func traceAggregationOptions(logger *commonlogger.ContextLogger, odigosCfg *odig
 			logger.Error(errInvalidTraceAggregationValue, "ignoring traceAggregation setting", "field", "maxTraces", "value", *in.MaxTraces)
 		}
 	}
+	if in.LateSpansMaxMemoryMiB != nil {
+		if *in.LateSpansMaxMemoryMiB >= 0 {
+			out.LateSpansMaxMemoryMiB = in.LateSpansMaxMemoryMiB
+		} else {
+			logger.Error(errInvalidTraceAggregationValue, "ignoring traceAggregation setting", "field", "lateSpansMaxMemoryMiB", "value", *in.LateSpansMaxMemoryMiB)
+		}
+	}
 	return out
 }
 

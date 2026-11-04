@@ -485,6 +485,14 @@ collectorGateway:
     # @schema
     # maxTraces: 200000
 
+    # @schema
+    # type: integer
+    # description: |-
+    #   memory (MiB) used to remember sent traces, so spans arriving after their trace was sent
+    #   are counted in the late_spans metric. 0 disables that tracking.
+    # @schema
+    # lateSpansMaxMemoryMiB: 70
+
   # @schema
   # description: |-
   #   Service Graph settings

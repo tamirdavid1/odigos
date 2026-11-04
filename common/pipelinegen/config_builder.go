@@ -688,6 +688,9 @@ func ensureGroupByTraceProcessor(
 		if t.MaxTraces != nil {
 			processorCfg["max_traces"] = *t.MaxTraces
 		}
+		if t.LateSpansMaxMemoryMiB != nil {
+			processorCfg["late_spans_max_memory_mib"] = *t.LateSpansMaxMemoryMiB
+		}
 	}
 	currentConfig.Processors[consts.GroupByTraceProcessor] = processorCfg
 	processorsResults.TracesProcessors = append(
