@@ -386,14 +386,16 @@ func (p *groupByTraceProcessor) release(e *traceEntry, reason releaseReason) {
 // batchpersignal.SplitTraces), since the processor owns td (MutatesData).
 func splitByTrace(td ptrace.Traces, cfg *Config) map[pcommon.TraceID]*traceBatch {
 	batches := map[pcommon.TraceID]*traceBatch{}
+	rsByTrace := map[pcommon.TraceID]ptrace.ResourceSpans{}
+	ssByTrace := map[pcommon.TraceID]ptrace.SpanSlice{}
 	rss := td.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
 		rs := rss.At(i)
-		rsByTrace := map[pcommon.TraceID]ptrace.ResourceSpans{}
+		clear(rsByTrace)
 		sss := rs.ScopeSpans()
 		for j := 0; j < sss.Len(); j++ {
 			ss := sss.At(j)
-			ssByTrace := map[pcommon.TraceID]ptrace.SpanSlice{}
+			clear(ssByTrace)
 			spans := ss.Spans()
 			for k := 0; k < spans.Len(); k++ {
 				span := spans.At(k)
