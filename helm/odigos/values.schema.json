@@ -420,7 +420,7 @@
             },
             "lateSpansMaxMemoryMiB": {
               "default": 70,
-              "description": "memory (MiB) used to remember sent traces, so spans arriving after their trace was sent\nare counted in the late_spans metric. 0 disables that tracking.",
+              "description": "memory (MiB) used to remember sent traces, so spans arriving after their trace was sent\nare counted in the late_spans and late_traces metrics. 0 disables that tracking.",
               "title": "lateSpansMaxMemoryMiB",
               "type": "integer"
             },

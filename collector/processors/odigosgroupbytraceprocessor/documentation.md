@@ -19,7 +19,22 @@ Spans that arrived after their trace was released, by how that trace was release
 | Name | Description | Values | Semantic Convention |
 | ---- | ----------- | ------ | ------------------- |
 | class | Wait class of the trace. | Str: ``sync``, ``async`` | - |
-| reason | Why the trace was released. For late_spans, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
+| reason | Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
+
+### otelcol_odigos.groupbytrace.late_traces
+
+Traces that got spans after they were released, so they reached the next consumer in more than one piece. Counted once per trace.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {traces} | Sum | Int | true | Development |
+
+#### Attributes
+
+| Name | Description | Values | Semantic Convention |
+| ---- | ----------- | ------ | ------------------- |
+| class | Wait class of the trace. | Str: ``sync``, ``async`` | - |
+| reason | Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
 
 ### otelcol_odigos.groupbytrace.spans_in_memory
 
@@ -41,7 +56,7 @@ Spans released to the next consumer.
 
 | Name | Description | Values | Semantic Convention |
 | ---- | ----------- | ------ | ------------------- |
-| reason | Why the trace was released. For late_spans, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
+| reason | Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
 | class | Wait class of the trace. | Str: ``sync``, ``async`` | - |
 
 ### otelcol_odigos.groupbytrace.traces_in_memory
@@ -64,7 +79,7 @@ Traces released to the next consumer.
 
 | Name | Description | Values | Semantic Convention |
 | ---- | ----------- | ------ | ------------------- |
-| reason | Why the trace was released. For late_spans, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
+| reason | Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch. | Str: ``settled``, ``timeout``, ``evicted``, ``shutdown``, ``long_running`` | - |
 | class | Wait class of the trace. | Str: ``sync``, ``async`` | - |
 
 ### otelcol_odigos.memory_pressure.spans

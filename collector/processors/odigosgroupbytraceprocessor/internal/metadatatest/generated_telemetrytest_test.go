@@ -21,12 +21,16 @@ func TestSetupTelemetry(t *testing.T) {
 	require.NoError(t, err)
 	defer tb.Shutdown()
 	tb.OdigosGroupbytraceLateSpans.Add(context.Background(), 1)
+	tb.OdigosGroupbytraceLateTraces.Add(context.Background(), 1)
 	tb.OdigosGroupbytraceSpansInMemory.Add(context.Background(), 1)
 	tb.OdigosGroupbytraceSpansReleased.Add(context.Background(), 1)
 	tb.OdigosGroupbytraceTracesInMemory.Add(context.Background(), 1)
 	tb.OdigosGroupbytraceTracesReleased.Add(context.Background(), 1)
 	tb.OdigosMemoryPressureSpans.Add(context.Background(), 1)
 	AssertEqualOdigosGroupbytraceLateSpans(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosGroupbytraceLateTraces(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosGroupbytraceSpansInMemory(t, testTel,

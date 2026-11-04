@@ -489,7 +489,7 @@ collectorGateway:
     # type: integer
     # description: |-
     #   memory (MiB) used to remember sent traces, so spans arriving after their trace was sent
-    #   are counted in the late_spans metric. 0 disables that tracking.
+    #   are counted in the late_spans and late_traces metrics. 0 disables that tracking.
     # @schema
     # lateSpansMaxMemoryMiB: 70
 

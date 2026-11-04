@@ -21,7 +21,7 @@ attributes:
     description: ID of the component that reacted to memory pressure.
     type: string
   reason:
-    description: Why the trace was released. For late_spans, long_running marks spans longer than the wait, which no wait increase would catch.
+    description: Why the trace was released. For late_spans and late_traces, long_running marks spans longer than the wait, which no wait increase would catch.
     type: string
     enum: [settled, timeout, evicted, shutdown, long_running]
 
@@ -31,6 +31,15 @@ telemetry:
       enabled: true
       description: Spans that arrived after their trace was released, by how that trace was released.
       unit: "{spans}"
+      sum:
+        value_type: int
+        monotonic: true
+      attributes: [class, reason]
+      stability: development
+    odigos.groupbytrace.late_traces:
+      enabled: true
+      description: Traces that got spans after they were released, so they reached the next consumer in more than one piece. Counted once per trace.
+      unit: "{traces}"
       sum:
         value_type: int
         monotonic: true

@@ -37,6 +37,22 @@ func AssertEqualOdigosGroupbytraceLateSpans(t *testing.T, tt *componenttest.Tele
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
 
+func AssertEqualOdigosGroupbytraceLateTraces(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos.groupbytrace.late_traces",
+		Description: "Traces that got spans after they were released, so they reached the next consumer in more than one piece. Counted once per trace. [Development]",
+		Unit:        "{traces}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos.groupbytrace.late_traces")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
 func AssertEqualOdigosGroupbytraceSpansInMemory(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos.groupbytrace.spans_in_memory",

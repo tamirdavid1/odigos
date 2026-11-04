@@ -112,6 +112,9 @@ type releasedTrace struct {
 	until  int64
 	reason releaseReason
 	async  bool
+	// lateCounted is set once the trace is counted in late_traces, and kept when its
+	// late fragment is released again, so a trace is counted once however many pieces it has.
+	lateCounted bool
 }
 
 type releasedID struct {
@@ -146,7 +149,12 @@ func (s *shard) add(b *traceBatch, now time.Time, cfg *Config, maxTraces int) (c
 	defer s.mu.Unlock()
 
 	if r, ok := s.released[b.id]; ok && now.UnixNano() < r.until {
-		late = &r
+		seen := r
+		late = &seen
+		if !r.lateCounted {
+			r.lateCounted = true
+			s.released[b.id] = r
+		}
 	}
 	e, ok := s.traces[b.id]
 	if ok {
@@ -198,7 +206,7 @@ func (s *shard) markReleased(e *traceEntry, reason releaseReason, now time.Time)
 		s.forgetOldestReleased()
 	}
 	until := now.Add(lateSpanWindow).UnixNano()
-	s.released[e.id] = releasedTrace{until: until, reason: reason, async: e.async}
+	s.released[e.id] = releasedTrace{until: until, reason: reason, async: e.async, lateCounted: s.released[e.id].lateCounted}
 	s.releasedQueue = append(s.releasedQueue, releasedID{id: e.id, until: until})
 }
 
@@ -316,6 +324,14 @@ func (p *groupByTraceProcessor) ConsumeTraces(_ context.Context, td ptrace.Trace
 			}
 			p.addLateSpans(ctx, long, reasonLongRunning, late.async)
 			p.addLateSpans(ctx, b.spans-long, late.reason, late.async)
+			if !late.lateCounted {
+				reason := late.reason
+				if long > 0 {
+					reason = reasonLongRunning
+				}
+				p.telemetry.OdigosGroupbytraceLateTraces.Add(ctx, 1, metric.WithAttributes(
+					attribute.String("reason", reason.String()), attribute.String("class", className(late.async))))
+			}
 		}
 		if evicted != nil {
 			p.release(evicted, reasonEvicted)

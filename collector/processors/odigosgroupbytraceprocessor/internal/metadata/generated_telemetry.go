@@ -27,6 +27,7 @@ type TelemetryBuilder struct {
 	mu                               sync.Mutex
 	registrations                    []metric.Registration
 	OdigosGroupbytraceLateSpans      metric.Int64Counter
+	OdigosGroupbytraceLateTraces     metric.Int64Counter
 	OdigosGroupbytraceSpansInMemory  metric.Int64UpDownCounter
 	OdigosGroupbytraceSpansReleased  metric.Int64Counter
 	OdigosGroupbytraceTracesInMemory metric.Int64UpDownCounter
@@ -67,6 +68,12 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 		"otelcol_odigos.groupbytrace.late_spans",
 		metric.WithDescription("Spans that arrived after their trace was released, by how that trace was released. [Development]"),
 		metric.WithUnit("{spans}"),
+	)
+	errs = errors.Join(errs, err)
+	builder.OdigosGroupbytraceLateTraces, err = builder.meter.Int64Counter(
+		"otelcol_odigos.groupbytrace.late_traces",
+		metric.WithDescription("Traces that got spans after they were released, so they reached the next consumer in more than one piece. Counted once per trace. [Development]"),
+		metric.WithUnit("{traces}"),
 	)
 	errs = errors.Join(errs, err)
 	builder.OdigosGroupbytraceSpansInMemory, err = builder.meter.Int64UpDownCounter(

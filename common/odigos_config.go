@@ -306,7 +306,7 @@ type TraceAggregationConfiguration struct {
 	MaxTraces *int `json:"maxTraces,omitempty"`
 
 	// LateSpansMaxMemoryMiB bounds the memory used to remember sent traces so spans
-	// arriving after them are counted in the late_spans metric. 0 disables that
+	// arriving after them are counted in the late_spans and late_traces metrics. 0 disables that
 	// tracking. Default 70.
 	LateSpansMaxMemoryMiB *int `json:"lateSpansMaxMemoryMiB,omitempty"`
 }

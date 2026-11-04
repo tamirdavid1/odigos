@@ -293,4 +293,40 @@ func TestLateLongRunningSpans(t *testing.T) {
 		{Value: 1, Attributes: attribute.NewSet(attribute.String("reason", "long_running"), attribute.String("class", "sync"))},
 		{Value: 1, Attributes: attribute.NewSet(attribute.String("reason", "settled"), attribute.String("class", "sync"))},
 	}, metricdatatest.IgnoreTimestamp())
+	metadatatest.AssertEqualOdigosGroupbytraceLateTraces(t, tt, []metricdata.DataPoint[int64]{
+		{Value: 1, Attributes: attribute.NewSet(attribute.String("reason", "long_running"), attribute.String("class", "sync"))},
+	}, metricdatatest.IgnoreTimestamp())
+}
+
+func TestLateTracesCountedOnce(t *testing.T) {
+	tt := componenttest.NewTelemetry()
+	t.Cleanup(func() { require.NoError(t, tt.Shutdown(context.Background())) })
+	cfg := createDefaultConfig()
+	cfg.RootSettle = 50 * time.Millisecond
+	cfg.SyncWait = 200 * time.Millisecond
+	sink := new(consumertest.TracesSink)
+	p, err := newGroupByTraceProcessor(metadatatest.NewSettings(tt), cfg, sink)
+	require.NoError(t, err)
+	require.NoError(t, p.Start(context.Background(), componenttest.NewNopHost()))
+	t.Cleanup(func() { require.NoError(t, p.Shutdown(context.Background())) })
+
+	require.NoError(t, p.ConsumeTraces(context.Background(), newTraces(map[string][]testSpan{
+		"frontend": {{trace: traceA, root: true}},
+	})))
+	require.Eventually(t, func() bool { return len(sink.AllTraces()) == 1 }, 2*time.Second, 10*time.Millisecond)
+
+	// Two late batches, then another one after the late fragment itself was released.
+	for range 2 {
+		require.NoError(t, p.ConsumeTraces(context.Background(), newTraces(map[string][]testSpan{"api": {{trace: traceA}}})))
+	}
+	require.Eventually(t, func() bool { return len(sink.AllTraces()) == 2 }, 2*time.Second, 10*time.Millisecond)
+	require.NoError(t, p.ConsumeTraces(context.Background(), newTraces(map[string][]testSpan{"api": {{trace: traceA}}})))
+
+	metadatatest.AssertEqualOdigosGroupbytraceLateSpans(t, tt, []metricdata.DataPoint[int64]{
+		{Value: 2, Attributes: attribute.NewSet(attribute.String("reason", "settled"), attribute.String("class", "sync"))},
+		{Value: 1, Attributes: attribute.NewSet(attribute.String("reason", "timeout"), attribute.String("class", "sync"))},
+	}, metricdatatest.IgnoreTimestamp())
+	metadatatest.AssertEqualOdigosGroupbytraceLateTraces(t, tt, []metricdata.DataPoint[int64]{
+		{Value: 1, Attributes: attribute.NewSet(attribute.String("reason", "settled"), attribute.String("class", "sync"))},
+	}, metricdatatest.IgnoreTimestamp())
 }
