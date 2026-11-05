@@ -43,12 +43,14 @@ spec:
                 fi
               fi
 
-              DOWNLOAD_URL="https://github.com/odigos-io/odigos/releases/download/${IMAGE_TAG}/helm-chart-odigos-${IMAGE_TAG#v}.tgz"
-              echo "⬇️ Downloading Odigos $IMAGE_TAG from: $DOWNLOAD_URL"
-              # --retry X: retry up to X times
-              # --retry-delay X: wait X second between retries
-              # --retry-max-time X: maximum time to spend retrying (X seconds for download)
-              curl -L -o odigos-latest-chart.tgz --retry 5 --retry-delay 1 --retry-max-time 60 "$DOWNLOAD_URL"
+              CHART_ASSET="helm-chart-odigos-${IMAGE_TAG#v}.tgz"
+              echo "⬇️ Downloading Odigos $IMAGE_TAG release asset: $CHART_ASSET"
+              # The repo is private, so release assets require an authenticated download (GH_TOKEN).
+              gh release download "$IMAGE_TAG" \
+                --repo odigos-io/odigos \
+                --pattern "$CHART_ASSET" \
+                --output odigos-latest-chart.tgz \
+                --clobber
 
               echo "🚀 Installing Odigos $IMAGE_TAG from Helm Chart..."
               helm upgrade --install odigos ./odigos-latest-chart.tgz \

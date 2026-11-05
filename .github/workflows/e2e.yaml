@@ -198,6 +198,7 @@ jobs:
       - name: Run E2E Tests
         env:
           LATEST_RELEASE_TAG: ${{ steps.get-latest-tag.outputs.LATEST_RELEASE_TAG }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
           chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
