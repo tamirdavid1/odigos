@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"runtime"
 	"sync"
 	"time"
 
@@ -23,7 +24,6 @@ import (
 )
 
 const (
-	numShards   = 16
 	releaseTick = 100 * time.Millisecond
 	// lateSpanWindow is how long a released trace ID is remembered to count spans
 	// that arrive after it.
@@ -242,7 +242,7 @@ type groupByTraceProcessor struct {
 	next        consumer.Traces
 	logger      *zap.Logger
 	telemetry   *metadata.TelemetryBuilder
-	shards      [numShards]*shard
+	shards      []*shard
 	maxPerShard int
 	// memLimitReached is rtml.IsMemLimitReached, replaceable in tests.
 	memLimitReached func() bool
@@ -259,11 +259,14 @@ func newGroupByTraceProcessor(set processor.Settings, cfg *Config, next consumer
 	if err != nil {
 		return nil, err
 	}
+	// One shard per usable CPU; fewer shards than GOMAXPROCS fell behind under high load.
+	numShards := runtime.GOMAXPROCS(0)
 	p := &groupByTraceProcessor{
 		cfg:         cfg,
 		next:        next,
 		logger:      set.Logger,
 		telemetry:   telemetry,
+		shards:      make([]*shard, numShards),
 		maxPerShard: max(1, (cfg.MaxTraces+numShards-1)/numShards),
 
 		memLimitReached: rtml.IsMemLimitReached,
@@ -348,7 +351,7 @@ func (p *groupByTraceProcessor) addLateSpans(ctx context.Context, n int, reason 
 }
 
 func (p *groupByTraceProcessor) shardFor(id pcommon.TraceID) *shard {
-	return p.shards[binary.BigEndian.Uint64(id[8:])%numShards]
+	return p.shards[binary.BigEndian.Uint64(id[8:])%uint64(len(p.shards))]
 }
 
 // releaseLoop releases a shard's expired traces one at a time, so a slow next
